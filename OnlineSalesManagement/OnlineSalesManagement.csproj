@@ -172,7 +172,7 @@
     <Compile Include="Controllers\CustomersController.cs" />
     <Compile Include="Controllers\EmployeesController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Controllers\InventoryReportController.cs" />
+    <Compile Include="Controllers\InventoryReportsController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\ProductsController.cs" />
     <Compile Include="Controllers\PurchaseReceiptsController.cs" />
@@ -192,6 +192,9 @@
     <Compile Include="Models\Employee.cs" />
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\InventoryShiftAuditLog.cs" />
+    <Compile Include="Models\InventoryShiftSnapshot.cs" />
+    <Compile Include="Models\InventoryShiftSnapshotDetail.cs" />
     <Compile Include="Models\InventoryTransaction.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
     <Compile Include="Models\ModelLimits.cs" />
@@ -202,10 +205,13 @@
     <Compile Include="Models\SalesOrder.cs" />
     <Compile Include="Models\SalesOrderDetail.cs" />
     <Compile Include="Models\SampleDataSeeder.cs" />
+    <Compile Include="Models\ShiftTemplate.cs" />
     <Compile Include="Models\Supplier.cs" />
+    <Compile Include="Models\WorkShift.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\PurchaseReceiptService.cs" />
     <Compile Include="Services\SalesOrderService.cs" />
+    <Compile Include="Services\ShiftManagementService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\PurchaseReceiptCreateViewModel.cs" />
     <Compile Include="ViewModels\SalesOrderCreateViewModel.cs" />

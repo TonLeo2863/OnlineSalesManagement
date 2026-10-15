@@ -31,6 +31,21 @@ namespace OnlineSalesManagement.Models
         public DbSet<SalesOrder> SalesOrders { get; set; }
         public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<ShiftTemplate> ShiftTemplates { get; set; }
+        public DbSet<WorkShift> WorkShifts { get; set; }
+
+        public DbSet<InventoryShiftSnapshot>
+            InventoryShiftSnapshots
+        { get; set; }
+
+        public DbSet<InventoryShiftSnapshotDetail>
+            InventoryShiftSnapshotDetails
+        { get; set; }
+
+        public DbSet<InventoryShiftAuditLog>
+            InventoryShiftAuditLogs
+        { get; set; }
+
 
         public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)

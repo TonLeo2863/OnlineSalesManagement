@@ -112,6 +112,20 @@ namespace OnlineSalesManagement
                 .WithMany(o => o.InventoryTransactions)
                 .HasForeignKey(t => t.SalesOrderId)
                 .WillCascadeOnDelete(false);
+
+
+            modelBuilder.Entity<InventoryShiftSnapshot>()
+                .Property(x => x.TotalStockValue)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<InventoryShiftSnapshotDetail>()
+                .Property(x => x.UnitCost)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<InventoryShiftSnapshotDetail>()
+                .Property(x => x.StockValue)
+                .HasPrecision(18, 2);
+
         }
     }
 }
