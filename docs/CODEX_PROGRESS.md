@@ -39,3 +39,5 @@ Commit công việc: chưa tạo. Push: chưa thực hiện. Sau commit ghi SHA 
 - tests/SmokeTests.cs và Run-SmokeTests.ps1: 35 kiểm tra đạt (quy tắc stock, overflow, role attributes, anti-forgery, bind và ngày sai). Không phải test HTTP/integration. Script mặc định bị execution policy chặn; chạy trong tiến trình riêng với -ExecutionPolicy Bypass, không đổi policy máy.
 - Build Debug + MvcBuildViews=true exit 0; chưa kiểm chứng in A4 hoặc dữ liệu báo cáo qua HTTP.
 - Đang chờ người dùng chọn tài khoản Admin đầu tiên, không tự nâng quyền. Tiếp tục CRUD/danh mục, storefront, phân tích và test độc lập.
+
+- Commit báo cáo/test 3f803ac: build Razor đạt, 35 smoke test đạt; chuẩn bị push. Chưa kiểm thử HTTP/báo cáo bằng DB.
