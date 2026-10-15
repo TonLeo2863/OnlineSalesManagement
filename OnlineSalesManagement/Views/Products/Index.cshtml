@@ -1,0 +1,200 @@
+﻿@model IEnumerable<OnlineSalesManagement.Product>
+
+@{
+    ViewBag.Title = "Sản phẩm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var vi = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+
+    // Giá trị bộ lọc do ProductsController.Index gửi sang
+    string q = ViewBag.Q as string;
+    string stock = ViewBag.Stock as string;
+    string status = ViewBag.Status as string;
+    int? selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+
+    bool hasFilter = !string.IsNullOrWhiteSpace(q)
+                     || selectedCategoryId.HasValue
+                     || !string.IsNullOrEmpty(stock)
+                     || !string.IsNullOrEmpty(status);
+
+    int total = Model.Count();
+    int outCount = Model.Count(p => p.QuantityInStock == 0);
+    int lowCount = Model.Count(p => p.QuantityInStock > 0 && p.IsLowStock);
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Sản phẩm</h1>
+        <p class="page-subtitle">Quản lý hàng hóa, giá bán và tồn kho.</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Thêm sản phẩm
+    </a>
+</div>
+
+@* ===== Tìm kiếm và lọc (GET, giữ nguyên action Index) ===== *@
+<form method="get" action="@Url.Action("Index")" class="panel filter-bar">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-3">
+            <label class="form-label small text-muted mb-1" for="q">Tìm kiếm</label>
+            <input type="search" id="q" name="q" value="@q" class="form-control"
+                   placeholder="Mã hoặc tên sản phẩm..." />
+        </div>
+        <div class="col-6 col-lg-3">
+            <label class="form-label small text-muted mb-1" for="categoryId">Danh mục</label>
+            @Html.DropDownList("categoryId", (IEnumerable<SelectListItem>)ViewBag.Categories, "Tất cả danh mục", new { @class = "form-select" })
+        </div>
+        <div class="col-6 col-lg-2">
+            <label class="form-label small text-muted mb-1" for="stock">Tồn kho</label>
+            <select id="stock" name="stock" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="ok" selected="@(stock == "ok")">Còn hàng</option>
+                <option value="low" selected="@(stock == "low")">Sắp hết hàng</option>
+                <option value="out" selected="@(stock == "out")">Hết hàng</option>
+            </select>
+        </div>
+        <div class="col-6 col-lg-2">
+            <label class="form-label small text-muted mb-1" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="active" selected="@(status == "active")">Đang kinh doanh</option>
+                <option value="inactive" selected="@(status == "inactive")">Ngừng kinh doanh</option>
+            </select>
+        </div>
+        <div class="col-6 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-search"></i> Lọc</button>
+            @if (hasFilter)
+            {
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                    <i class="bi bi-x-lg"></i><span class="visually-hidden">Xóa bộ lọc</span>
+                </a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="result-meta">
+    <span>@(hasFilter ? "Kết quả" : "Tổng cộng"): <strong>@total.ToString("N0", vi)</strong> sản phẩm</span>
+    @if (lowCount > 0)
+    {
+        <span><span class="status-badge badge-warning">Sắp hết</span> @lowCount</span>
+    }
+    @if (outCount > 0)
+    {
+        <span><span class="status-badge badge-danger">Hết hàng</span> @outCount</span>
+    }
+</div>
+
+<div class="panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle data-table">
+            <thead>
+                <tr>
+                    <th style="width:64px;">Ảnh</th>
+                    <th>Mã SP</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>ĐVT</th>
+                    <th class="text-end">Giá nhập</th>
+                    <th class="text-end">Giá bán</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th class="d-none d-xl-table-cell">Ngày tạo</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    string desc = item.Description;
+                    if (!string.IsNullOrWhiteSpace(desc) && desc.Length > 70)
+                    {
+                        desc = desc.Substring(0, 70) + "…";
+                    }
+
+                    <tr class="@(item.IsActive ? "" : "row-inactive")">
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img src="@Url.Content(item.ImageUrl)" alt="@item.Name" class="product-thumb" />
+                            }
+                            else
+                            {
+                                <span class="product-thumb-empty"><i class="bi bi-image"></i></span>
+                            }
+                        </td>
+                        <td class="nowrap"><code>@item.Sku</code></td>
+                        <td>
+                            <div class="cell-title">@item.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(desc))
+                            {
+                                <div class="cell-sub">@desc</div>
+                            }
+                        </td>
+                        <td>@(item.Category != null ? item.Category.Name : "—")</td>
+                        <td>@item.Unit</td>
+                        <td class="text-end money">@item.CostPrice.ToString("N0", vi) ₫</td>
+                        <td class="text-end money"><strong>@item.SalePrice.ToString("N0", vi) ₫</strong></td>
+                        <td class="nowrap">
+                            <span class="stock-qty">@item.QuantityInStock.ToString("N0", vi)</span>
+                            @if (item.QuantityInStock == 0)
+                            {
+                                <span class="status-badge badge-danger">Hết hàng</span>
+                            }
+                            else if (item.IsLowStock)
+                            {
+                                <span class="status-badge badge-warning">Sắp hết</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-success">Còn hàng</span>
+                            }
+                            <div class="cell-sub">Tối thiểu: @item.ReorderLevel.ToString("N0", vi)</div>
+                        </td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="status-badge badge-success">Đang kinh doanh</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-muted">Ngừng kinh doanh</span>
+                            }
+                        </td>
+                        <td class="d-none d-xl-table-cell nowrap">@item.CreatedDate.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <div class="row-actions">
+                                <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary" title="Xem chi tiết">
+                                    <i class="bi bi-eye"></i><span class="visually-hidden">Xem</span>
+                                </a>
+                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                    <i class="bi bi-pencil"></i><span class="visually-hidden">Sửa</span>
+                                </a>
+                                <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                    <i class="bi bi-trash"></i><span class="visually-hidden">Xóa</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (total == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            @if (hasFilter)
+            {
+                <div>Không có sản phẩm nào phù hợp với bộ lọc.</div>
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary mt-2">Xóa bộ lọc</a>
+            }
+            else
+            {
+                <div>Chưa có sản phẩm nào.</div>
+                <a href="@Url.Action("Create")" class="btn btn-sm btn-primary mt-2">Thêm sản phẩm đầu tiên</a>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,102 @@
+﻿
+@model OnlineSalesManagement.PurchaseReceipt
+
+@{
+    ViewBag.Title = "Chi tiết phiếu nhập";
+}
+
+<h2>Chi tiết phiếu nhập</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Số phiếu:</strong> @Model.ReceiptNumber</p>
+        <p><strong>Nhà cung cấp:</strong> @Model.Supplier.Name</p>
+        <p><strong>Nhân viên:</strong> @Model.Employee.FullName</p>
+        <p><strong>Trạng thái:</strong> @Model.Status</p>
+        <p><strong>Ghi chú:</strong> @Model.Note</p>
+        <p>
+            <strong>Tổng tiền:</strong>
+            @Model.TotalAmount.ToString("N0") đ
+        </p>
+    </div>
+</div>
+
+<h4>Danh sách sản phẩm nhập</h4>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Đơn giá nhập</th>
+            <th>Thành tiền</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var line in Model.Details)
+        {
+            <tr>
+                <td>@line.Product.Name</td>
+                <td>@line.Quantity</td>
+                <td>@line.UnitCost.ToString("N0") đ</td>
+                <td>
+                    @((line.Quantity * line.UnitCost).ToString("N0")) đ
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.Status == OnlineSalesManagement.ReceiptStatus.Draft)
+{
+    using (Html.BeginForm("Confirm", "PurchaseReceipts",
+        new { id = Model.Id }, FormMethod.Post,
+        new { style = "display:inline-block;" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <button type="submit"
+                class="btn btn-success"
+                onclick="return confirm('Xác nhận nhập kho?');">
+            Xác nhận nhập kho
+        </button>
+    }
+}
+
+@if (Model.Status != OnlineSalesManagement.ReceiptStatus.Cancelled)
+{
+    using (Html.BeginForm("Cancel", "PurchaseReceipts",
+        new { id = Model.Id }, FormMethod.Post,
+        new { style = "display:inline-block;" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <button type="submit"
+                class="btn btn-danger"
+                onclick="return confirm('Bạn muốn hủy phiếu này?');">
+            Hủy phiếu nhập
+        </button>
+    }
+}
+
+<div class="mt-3">
+    @Html.ActionLink(
+            "Quay lại danh sách",
+            "Index",
+            null,
+            new { @class = "btn btn-secondary" })
+</div>

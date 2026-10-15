@@ -1,0 +1,218 @@
+﻿
+@model OnlineSalesManagement.ViewModels.PurchaseReceiptCreateViewModel
+
+@{
+    ViewBag.Title = "Tạo phiếu nhập kho";
+    var productOptions = Model.Products.ToList();
+}
+
+<h2>Tạo phiếu nhập kho</h2>
+<p>
+    Phiếu được lưu ở trạng thái Nháp.
+    Tồn kho chỉ tăng sau khi xác nhận phiếu.
+</p>
+
+@using (Html.BeginForm("Create", "PurchaseReceipts",
+    FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    @Html.ValidationSummary(false, "",
+            new { @class = "text-danger" })
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            @Html.LabelFor(m => m.ReceiptNumber)
+            @Html.TextBoxFor(m => m.ReceiptNumber,
+                     new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.ReceiptNumber,
+                     "", new { @class = "text-danger" })
+        </div>
+
+        <div class="col-md-4">
+            @Html.LabelFor(m => m.SupplierId)
+            @Html.DropDownListFor(
+                     m => m.SupplierId,
+                     Model.Suppliers,
+                     "-- Chọn nhà cung cấp --",
+                     new { @class = "form-select" })
+            @Html.ValidationMessageFor(m => m.SupplierId,
+                     "", new { @class = "text-danger" })
+        </div>
+
+        <div class="col-md-4">
+            @Html.LabelFor(m => m.EmployeeId)
+            @Html.DropDownListFor(
+                     m => m.EmployeeId,
+                     Model.Employees,
+                     "-- Chọn nhân viên --",
+                     new { @class = "form-select" })
+            @Html.ValidationMessageFor(m => m.EmployeeId,
+                     "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Note)
+        @Html.TextAreaFor(m => m.Note,
+                 new { @class = "form-control", rows = 2 })
+    </div>
+
+    <h4>Chi tiết hàng nhập</h4>
+
+    <table class="table table-bordered" id="detailsTable">
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Số lượng</th>
+                <th>Giá nhập (VND)</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Details.Count; i++)
+            {
+                <tr>
+                    <td>
+                        @Html.DropDownListFor(
+                                 m => m.Details[i].ProductId,
+                                 productOptions,
+                                 "-- Chọn sản phẩm --",
+                                 new { @class = "form-select product-select" })
+                    </td>
+                    <td>
+                        @Html.TextBoxFor(
+                                 m => m.Details[i].Quantity,
+                                 new
+                                 {
+                                     @class = "form-control",
+                                     type = "number",
+                                     min = "1"
+                                 })
+                    </td>
+                    <td>
+                        @Html.TextBoxFor(
+                                 m => m.Details[i].UnitCost,
+                                 new
+                                 {
+                                     @class = "form-control",
+                                     type = "number",
+                                     min = "0",
+                                     step = "0.01"
+                                 })
+                    </td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-outline-danger"
+                                onclick="removeRow(this)">
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-secondary"
+            onclick="addRow()">
+        + Thêm sản phẩm
+    </button>
+
+    <hr />
+
+    <button type="submit" class="btn btn-success">
+        Lưu phiếu nháp
+    </button>
+
+    @Html.ActionLink(
+            "Quay lại danh sách", "Index",
+            null, new { @class = "btn btn-outline-secondary" })
+}
+
+<template id="rowTemplate">
+    <tr>
+        <td>
+            <select class="form-select product-select"
+                    data-field="ProductId">
+                <option value="">-- Chọn sản phẩm --</option>
+                @foreach (var p in productOptions)
+                {
+                    <option value="@p.Value">@p.Text</option>
+                }
+            </select>
+        </td>
+        <td>
+            <input type="number" min="1"
+                   class="form-control"
+                   data-field="Quantity" />
+        </td>
+        <td>
+            <input type="number" min="0" step="0.01"
+                   class="form-control"
+                   data-field="UnitCost" />
+        </td>
+        <td>
+            <button type="button"
+                    class="btn btn-outline-danger"
+                    onclick="removeRow(this)">
+                Xóa
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>function renumberRows() {
+        var rows = document.querySelectorAll(
+            "#detailsTable tbody tr");
+
+        rows.forEach(function (row, index) {
+            row.querySelectorAll(
+                "[name],[data-field]").forEach(function (field) {
+                var fieldName = field.getAttribute("data-field");
+
+                if (!fieldName && field.name) {
+                    var match = field.name.match(
+                        /\.(ProductId|Quantity|UnitCost)$/);
+                    fieldName = match ? match[1] : null;
+                }
+
+                if (fieldName) {
+                    field.name =
+                        "Details[" + index + "]." + fieldName;
+                    field.id =
+                        "Details_" + index + "__" + fieldName;
+                }
+            });
+        });
+    }
+
+    function addRow() {
+        var tbody = document.querySelector(
+            "#detailsTable tbody");
+
+        if (tbody.rows.length >= 8) {
+            alert("Tối đa 8 dòng sản phẩm.");
+            return;
+        }
+
+        var template = document.getElementById(
+            "rowTemplate");
+
+        tbody.appendChild(
+            template.content.cloneNode(true));
+
+        renumberRows();
+    }
+
+    function removeRow(button) {
+        var tbody = document.querySelector(
+            "#detailsTable tbody");
+
+        if (tbody.rows.length <= 1) {
+            alert("Phiếu cần ít nhất một dòng.");
+            return;
+        }
+
+        button.closest("tr").remove();
+        renumberRows();
+    }</script>
