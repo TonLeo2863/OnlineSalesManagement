@@ -26,6 +26,12 @@ namespace OnlineSalesManagement.Controllers
 
             DateTime to = (toDate ?? DateTime.Today).Date;
 
+            if (!ModelState.IsValid)
+            {
+                toExclusive = from;
+                return false;
+            }
+
             if (from > to)
             {
                 ModelState.AddModelError(
@@ -117,27 +123,29 @@ namespace OnlineSalesManagement.Controllers
             model.FromDate = from;
             model.ToDate = end.AddDays(-1);
 
-            var details = db.PurchaseReceiptDetails
+            var details = db.InventoryTransactions
                 .AsNoTracking()
                 .Include(d => d.Product)
                 .Include(d => d.PurchaseReceipt.Supplier)
                 .Where(d =>
+                    d.TransactionType == InventoryTransactionType.PurchaseReceipt &&
+                    d.PurchaseReceiptId != null &&
                     d.PurchaseReceipt.Status == ReceiptStatus.Confirmed &&
-                    d.PurchaseReceipt.ReceiptDate >= from &&
-                    d.PurchaseReceipt.ReceiptDate < end)
+                    d.TransactionDate >= from &&
+                    d.TransactionDate < end)
                 .ToList();
 
             model.Rows = details.Select(d => new BusinessReportRow
             {
-                DocumentId = d.PurchaseReceiptId,
+                DocumentId = d.PurchaseReceiptId.Value,
                 DocumentNumber = d.PurchaseReceipt.ReceiptNumber,
-                Date = d.PurchaseReceipt.ReceiptDate,
+                Date = d.TransactionDate,
                 PartnerName = d.PurchaseReceipt.Supplier.Name,
                 ProductSku = d.Product.Sku,
                 ProductName = d.Product.Name,
-                Quantity = d.Quantity,
-                UnitPrice = d.UnitCost,
-                Amount = d.Quantity * d.UnitCost
+                Quantity = d.QuantityChange,
+                UnitPrice = d.UnitPrice,
+                Amount = d.QuantityChange * d.UnitPrice
             }).OrderByDescending(x => x.Date).ToList();
 
             model.DocumentCount =
@@ -165,28 +173,30 @@ namespace OnlineSalesManagement.Controllers
             model.FromDate = from;
             model.ToDate = end.AddDays(-1);
 
-            var details = db.SalesOrderDetails
+            var details = db.InventoryTransactions
                 .AsNoTracking()
                 .Include(d => d.Product)
                 .Include(d => d.SalesOrder.Customer)
                 .Where(d =>
+                    d.TransactionType == InventoryTransactionType.SalesOrder &&
+                    d.SalesOrderId != null &&
                     (d.SalesOrder.Status == OrderStatus.Confirmed ||
                      d.SalesOrder.Status == OrderStatus.Completed) &&
-                    d.SalesOrder.OrderDate >= from &&
-                    d.SalesOrder.OrderDate < end)
+                    d.TransactionDate >= from &&
+                    d.TransactionDate < end)
                 .ToList();
 
             model.Rows = details.Select(d => new BusinessReportRow
             {
-                DocumentId = d.SalesOrderId,
+                DocumentId = d.SalesOrderId.Value,
                 DocumentNumber = d.SalesOrder.OrderNumber,
-                Date = d.SalesOrder.OrderDate,
+                Date = d.TransactionDate,
                 PartnerName = d.SalesOrder.Customer.FullName,
                 ProductSku = d.Product.Sku,
                 ProductName = d.Product.Name,
-                Quantity = d.Quantity,
+                Quantity = -d.QuantityChange,
                 UnitPrice = d.UnitPrice,
-                Amount = d.Quantity * d.UnitPrice
+                Amount = -(decimal)d.QuantityChange * d.UnitPrice
             }).OrderByDescending(x => x.Date).ToList();
 
             model.DocumentCount =

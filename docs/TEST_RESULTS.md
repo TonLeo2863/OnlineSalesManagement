@@ -39,3 +39,7 @@ Chỉ dùng dữ liệu kiểm thử được cho phép. Không xóa hoặc rese
 ## Kiểm tra SQL chỉ đọc
 
 SQL Server 16.0.1000.6; __MigrationHistory có 2 migration tương ứng file source. 1 tài khoản, 0 role. 20 giao dịch; truy vấn đối chiếu Product.QuantityInStock với tổng QuantityChange: 0 sản phẩm lệch. Không chạy migration hoặc thay đổi dữ liệu. Fetch origin thành công; baseline trùng origin/master.
+
+## Smoke test đã thực thi
+
+Build Debug + Razor sau sửa báo cáo: exit 0. Run-SmokeTests.ps1: TOTAL PASS 35, exit 0. Chỉ kiểm tra logic model, metadata phân quyền/anti-forgery/bind và chặn ngày lỗi; chưa test HTTP hoặc ghi SQL.

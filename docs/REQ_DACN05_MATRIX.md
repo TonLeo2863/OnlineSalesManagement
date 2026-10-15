@@ -31,3 +31,7 @@ Cập nhật 16/10/2026. Trạng thái dựa trên mức chứng minh; có sourc
 3. Sửa định nghĩa thời gian báo cáo nhập/xuất theo giao dịch kho.
 
 Không phát triển thêm ca trực/snapshot trong đợt này. Chưa chạy migration hay sửa dữ liệu thật.
+
+## Cập nhật báo cáo
+
+Nhập/xuất đã sửa source dùng TransactionDate/QuantityChange/UnitPrice; chứng từ còn hiệu lực, loại hủy. Build Razor đạt, smoke 35 đạt; vẫn chưa kiểm thử tích hợp/report HTTP/in A4. Các trạng thái cũ trong bảng là mốc kiểm kê ban đầu.

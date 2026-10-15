@@ -31,3 +31,11 @@ Commit công việc: chưa tạo. Push: chưa thực hiện. Sau commit ghi SHA 
 - Fetch origin thành công; origin/master cùng baseline 877c60b (0/0 trước commit).
 - SQL chỉ đọc: SQL Server 2022 phiên bản 16.0.1000.6; có 2 migration InitialCreate/AddShiftManagementTables; 1 user, chưa có role; 20 giao dịch kho; 0 sản phẩm lệch tổng QuantityChange. Chưa khẳng định model khớp toàn bộ schema.
 - Chuẩn bị push các commit này lên codex/dacn05-completion; chỉ ghi push thành công sau khi nhận kết quả.
+
+## Báo cáo và smoke test — 16/10/2026
+
+- Push giai đoạn đầu thành công: 289832e và 286d1ce trên origin/codex/dacn05-completion.
+- ReportsController.Purchases/Sales: dùng TransactionDate, QuantityChange và UnitPrice của InventoryTransactions; chỉ chứng từ hiện còn hiệu lực; mô tả rõ loại chứng từ hủy, không phải sổ ròng. Chặn ngày sai định dạng trước truy vấn. Bổ sung CSS A4 ngang/lặp tiêu đề bảng.
+- tests/SmokeTests.cs và Run-SmokeTests.ps1: 35 kiểm tra đạt (quy tắc stock, overflow, role attributes, anti-forgery, bind và ngày sai). Không phải test HTTP/integration. Script mặc định bị execution policy chặn; chạy trong tiến trình riêng với -ExecutionPolicy Bypass, không đổi policy máy.
+- Build Debug + MvcBuildViews=true exit 0; chưa kiểm chứng in A4 hoặc dữ liệu báo cáo qua HTTP.
+- Đang chờ người dùng chọn tài khoản Admin đầu tiên, không tự nâng quyền. Tiếp tục CRUD/danh mục, storefront, phân tích và test độc lập.

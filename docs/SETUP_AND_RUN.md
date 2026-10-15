@@ -37,3 +37,7 @@ Tên Identity role chuẩn trong code: `Admin`, `Kho`, `BanHang`; vai trò khác
 Hiện chưa có UI cấp role/bootstrap Admin; không tự tạo tài khoản/mật khẩu cố định. Dùng tài khoản quản trị đã được người sở hữu xác minh và ASP.NET Identity UserManager/RoleManager để cấp role trong môi trường phù hợp. Tài khoản cũ chưa có role sẽ bị từ chối; đây là phần cần hoàn thiện trước bàn giao demo. Không sửa DB trực tiếp hoặc tự nâng quyền tài khoản hiện có trong phiên này.
 
 Kho tạo phiếu nháp rồi xác nhận; bán hàng tạo đơn Pending rồi xác nhận; chỉ thao tác qua dịch vụ/chứng từ để thay đổi tồn. Sản phẩm mới có tồn bằng 0. Admin kiểm tra báo cáo; báo cáo nhập/xuất hiện còn sai mốc ngày kho, chưa dùng làm số liệu bàn giao.
+
+## Chạy smoke test
+
+Sau build: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\Run-SmokeTests.ps1 (chỉ tiến trình này, không sửa policy máy). Không truy vấn/ghi database. Nhập/xuất hiện đã sửa source dùng ngày giao dịch kho và giá snapshot; vẫn cần kiểm chứng HTTP/SQL trước dùng làm số liệu bàn giao.
