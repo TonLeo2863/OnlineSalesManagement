@@ -1,8 +1,61 @@
 ﻿
+@model IEnumerable<OnlineSalesManagement.SalesOrder>
+
 @{
-    ViewBag.Title = "index";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Quản lý đơn hàng";
 }
 
-<h2>index</h2>
+<h2>Quản lý xuất kho và bán hàng</h2>
 
+<p>
+    @Html.ActionLink(
+            "Tạo đơn bán hàng",
+            "Create",
+            null,
+            new { @class = "btn btn-primary" })
+</p>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Số đơn hàng</th>
+            <th>Ngày đặt</th>
+            <th>Khách hàng</th>
+            <th>Kênh bán</th>
+            <th>Trạng thái</th>
+            <th>Tổng tiền</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.OrderNumber</td>
+                <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>
+                    @(item.Customer != null
+                    ? item.Customer.FullName
+                    : "")
+                </td>
+                <td>@item.Channel</td>
+                <td>@item.Status</td>
+                <td>@item.TotalAmount.ToString("N0") đ</td>
+                <td>
+                    @Html.ActionLink(
+                             "Chi tiết",
+                             "Details",
+                             new { id = item.Id },
+                             new { @class = "btn btn-sm btn-info" })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

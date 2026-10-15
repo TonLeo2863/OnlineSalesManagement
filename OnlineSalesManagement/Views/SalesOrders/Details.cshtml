@@ -1,8 +1,102 @@
 ﻿
+@model OnlineSalesManagement.SalesOrder
+
 @{
-    ViewBag.Title = "Details";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Chi tiết đơn hàng";
 }
 
-<h2>Details</h2>
+<h2>Chi tiết đơn bán hàng</h2>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Số đơn:</strong> @Model.OrderNumber</p>
+        <p><strong>Ngày đặt:</strong> @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+        <p><strong>Khách hàng:</strong> @Model.Customer.FullName</p>
+        <p><strong>Kênh bán:</strong> @Model.Channel</p>
+        <p><strong>Trạng thái:</strong> @Model.Status</p>
+        <p><strong>Thanh toán:</strong> @Model.PaymentMethod</p>
+        <p><strong>Tạm tính:</strong> @Model.SubTotal.ToString("N0") đ</p>
+        <p><strong>Giảm giá:</strong> @Model.DiscountAmount.ToString("N0") đ</p>
+        <h5>
+            Tổng thanh toán:
+            @Model.TotalAmount.ToString("N0") đ
+        </h5>
+    </div>
+</div>
+
+<h4>Chi tiết sản phẩm</h4>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+            <th>Thành tiền</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Details)
+        {
+            <tr>
+                <td>@item.Product.Name</td>
+                <td>@item.Quantity</td>
+                <td>@item.UnitPrice.ToString("N0") đ</td>
+                <td>@item.LineTotal.ToString("N0") đ</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.Status == OnlineSalesManagement.OrderStatus.Pending)
+{
+    using (Html.BeginForm(
+        "Confirm", "SalesOrders",
+        new { id = Model.Id }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit"
+                class="btn btn-success"
+                onclick="return confirm('Xác nhận xuất kho?');">
+            Xác nhận xuất kho
+        </button>
+    }
+}
+
+@if (Model.Status == OnlineSalesManagement.OrderStatus.Pending ||
+     Model.Status == OnlineSalesManagement.OrderStatus.Confirmed)
+{
+    using (Html.BeginForm(
+        "Cancel", "SalesOrders",
+        new { id = Model.Id }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit"
+                class="btn btn-danger mt-2"
+                onclick="return confirm('Bạn muốn hủy đơn hàng?');">
+            Hủy đơn hàng
+        </button>
+    }
+}
+
+<p class="mt-3">
+    @Html.ActionLink(
+            "Quay lại danh sách",
+            "Index",
+            null,
+            new { @class = "btn btn-secondary" })
+</p>
