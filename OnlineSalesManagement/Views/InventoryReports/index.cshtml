@@ -1,8 +1,249 @@
 ﻿
+@model IEnumerable<OnlineSalesManagement.Product>
+@using OnlineSalesManagement
+
 @{
-    ViewBag.Title = "index";
+    ViewBag.Title = "Báo cáo tồn kho";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var transactions =
+        ViewBag.RecentTransactions as
+        IEnumerable<InventoryTransaction>;
 }
 
-<h2>index</h2>
+<style>
+    .report-card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        background: #fff;
+        height: 100%;
+    }
 
+        .report-card h3 {
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+    .low-stock-row {
+        background-color: #fff3cd;
+    }
+
+    @@media print {
+        nav, footer, .no-print {
+            display: none !important;
+        }
+
+        .report-card {
+            break-inside: avoid;
+        }
+
+        body {
+            background: white !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between
+                align-items-center mb-4">
+        <h2>Báo cáo tồn kho</h2>
+
+        <button type="button"
+                onclick="window.print()"
+                class="btn btn-primary no-print">
+            In báo cáo
+        </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="report-card">
+                <p class="text-muted">Số sản phẩm</p>
+                <h3>@ViewBag.TotalProducts</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="report-card">
+                <p class="text-muted">Tổng số lượng tồn</p>
+                <h3>@ViewBag.TotalQuantity</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="report-card">
+                <p class="text-muted">Giá trị tồn ước tính</p>
+                <h3>
+                    @(((decimal)ViewBag.TotalStockValue).ToString("N0")) đ
+                </h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="report-card">
+                <p class="text-muted">Sản phẩm sắp hết</p>
+                <h3 class="text-danger">
+                    @ViewBag.LowStockCount
+                </h3>
+            </div>
+        </div>
+
+    </div>
+
+    @using (Html.BeginForm("Index", "InventoryReports",
+        FormMethod.Get, new { @class = "no-print mb-4" }))
+    {
+        <div class="row g-2">
+            <div class="col-md-5">
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Tìm theo tên hoặc mã sản phẩm"
+                       value="@ViewBag.Search" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-check mt-2">
+                    <input type="checkbox"
+                           class="form-check-input"
+                           name="lowStockOnly"
+                           value="true"
+                           @(ViewBag.LowStockOnly == true ? "checked" : "") />
+
+                    <span class="form-check-label">
+                        Chỉ xem hàng sắp hết
+                    </span>
+                </label>
+            </div>
+
+            <div class="col-md-4">
+                <button type="submit"
+                        class="btn btn-success">
+                    Lọc dữ liệu
+                </button>
+
+                @Html.ActionLink(
+                    "Xóa bộ lọc",
+                    "Index",
+                    null,
+                    new { @class = "btn btn-secondary" })
+            </div>
+        </div>
+    }
+
+    <h4>Danh sách tồn kho</h4>
+
+    <div class="table-responsive mb-5">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>ĐVT</th>
+                    <th>Tồn hiện tại</th>
+                    <th>Tồn tối thiểu</th>
+                    <th>Giá nhập</th>
+                    <th>Giá trị tồn</th>
+                    <th>Cảnh báo</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    bool lowStock =
+                        p.QuantityInStock <= p.ReorderLevel;
+
+                    <tr class="@(lowStock ? "low-stock-row" : "")">
+                        <td>@p.Sku</td>
+                        <td>@p.Name</td>
+                        <td>
+                            @(p.Category != null
+                                ? p.Category.Name
+                                : "")
+                        </td>
+                        <td>@p.Unit</td>
+                        <td>@p.QuantityInStock</td>
+                        <td>@p.ReorderLevel</td>
+                        <td>@p.CostPrice.ToString("N0") đ</td>
+                        <td>@p.StockValue.ToString("N0") đ</td>
+                        <td>
+                            @if (lowStock)
+                            {
+                                <span class="text-danger fw-bold">
+                                    Sắp hết
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-success">
+                                    Đủ hàng
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h4>20 giao dịch kho gần nhất</h4>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Sản phẩm</th>
+                    <th>Loại giao dịch</th>
+                    <th>Thay đổi</th>
+                    <th>Tồn sau giao dịch</th>
+                    <th>Người thực hiện</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (transactions != null)
+                {
+                    foreach (var t in transactions)
+                    {
+                        <tr>
+                            <td>
+                                @t.TransactionDate.ToString(
+                                    "dd/MM/yyyy HH:mm")
+                            </td>
+
+                            <td>
+                                @(t.Product != null
+                                    ? t.Product.Name
+                                    : "")
+                            </td>
+
+                            <td>@t.TransactionType</td>
+
+                            <td class="@(t.QuantityChange < 0
+                                ? "text-danger" : "text-success")">
+                                @t.QuantityChange
+                            </td>
+
+                            <td>@t.StockAfter</td>
+                            <td>@t.CreatedBy</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted small">
+        Giá trị tồn kho được ước tính theo giá nhập gần nhất
+        của sản phẩm, không phải giá vốn bình quân.
+        Số liệu tổng hợp áp dụng bộ lọc hiện tại;
+        lịch sử giao dịch hiển thị 20 giao dịch mới nhất
+        của toàn hệ thống.
+    </p>
+</div>

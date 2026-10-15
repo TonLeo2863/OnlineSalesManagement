@@ -1,8 +1,270 @@
 ﻿
+@model OnlineSalesManagement.SalesOrder
+
 @{
-    ViewBag.Title = "Invoice";
+    ViewBag.Title = "Hóa đơn bán hàng";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    int stt = 0;
 }
 
-<h2>Invoice</h2>
+<style>
+    .invoice-paper {
+        max-width: 900px;
+        margin: 25px auto;
+        padding: 36px;
+        background: white;
+        color: #222;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
 
+    .invoice-heading {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+        .invoice-heading h2 {
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+    .invoice-info {
+        display: flex;
+        justify-content: space-between;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+        .invoice-info > div {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .invoice-info p {
+            margin-bottom: 8px;
+            overflow-wrap: anywhere;
+        }
+
+    .invoice-total {
+        max-width: 350px;
+        margin-left: auto;
+        margin-top: 20px;
+    }
+
+        .invoice-total .grand-total {
+            font-size: 20px;
+            font-weight: 700;
+            border-top: 2px solid #333;
+            padding-top: 12px;
+        }
+
+    .invoice-signature {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 55px;
+        text-align: center;
+    }
+
+        .invoice-signature > div {
+            width: 45%;
+        }
+
+    @@media print {
+        @@page {
+            size: A4;
+            margin: 14mm;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .no-print,
+        nav,
+        footer {
+            display: none !important;
+        }
+
+        .invoice-paper {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+            .invoice-paper table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .invoice-paper th,
+            .invoice-paper td {
+                border: 1px solid #444 !important;
+                padding: 8px;
+            }
+    }
+</style>
+
+<div class="no-print container mt-4">
+    <div class="d-flex gap-2">
+        <button type="button"
+                class="btn btn-primary"
+                onclick="window.print()">
+            In hóa đơn
+        </button>
+
+        @Html.ActionLink(
+            "Về chi tiết đơn hàng",
+            "Details",
+            new { id = Model.Id },
+            new { @class = "btn btn-secondary" })
+    </div>
+</div>
+
+<div class="invoice-paper">
+
+    <div class="invoice-heading">
+        <h2>Hóa đơn bán hàng</h2>
+        <p>Hệ thống quản lý bán hàng trực tuyến</p>
+        <p>
+            <strong>Số hóa đơn:</strong>
+            @Model.OrderNumber
+        </p>
+        <p>
+            <strong>Ngày lập:</strong>
+            @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")
+        </p>
+    </div>
+
+    <div class="invoice-info">
+        <div>
+            <h5>Thông tin khách hàng</h5>
+
+            <p>
+                <strong>Họ tên:</strong>
+                @Model.Customer.FullName
+            </p>
+
+            <p>
+                <strong>Số điện thoại:</strong>
+                @Model.Customer.PhoneNumber
+            </p>
+
+            <p>
+                <strong>Địa chỉ:</strong>
+                @(string.IsNullOrWhiteSpace(Model.ShippingAddress)
+                    ? Model.Customer.Address
+                    : Model.ShippingAddress)
+            </p>
+        </div>
+
+        <div>
+            <h5>Thông tin đơn hàng</h5>
+
+            <p>
+                <strong>Nhân viên:</strong>
+                @(Model.Employee != null
+                    ? Model.Employee.FullName
+                    : "Không có")
+            </p>
+
+            <p>
+                <strong>Kênh bán:</strong>
+                @Model.Channel
+            </p>
+
+            <p>
+                <strong>Phương thức thanh toán:</strong>
+                @Model.PaymentMethod
+            </p>
+
+            <p>
+                <strong>Trạng thái thanh toán:</strong>
+                @Model.PaymentStatus
+            </p>
+        </div>
+    </div>
+
+    <h5>Chi tiết sản phẩm</h5>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Sản phẩm</th>
+                <th class="text-end">Số lượng</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-end">Thành tiền</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.Details)
+            {
+                stt++;
+
+                <tr>
+                    <td>@stt</td>
+
+                    <td>
+                        @item.Product.Name
+                    </td>
+
+                    <td class="text-end">
+                        @item.Quantity
+                    </td>
+
+                    <td class="text-end">
+                        @item.UnitPrice.ToString("N0") đ
+                    </td>
+
+                    <td class="text-end">
+                        @item.LineTotal.ToString("N0") đ
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="invoice-total">
+        <p class="d-flex justify-content-between">
+            <span>Tạm tính:</span>
+            <strong>@Model.SubTotal.ToString("N0") đ</strong>
+        </p>
+
+        <p class="d-flex justify-content-between">
+            <span>Giảm giá:</span>
+            <strong>@Model.DiscountAmount.ToString("N0") đ</strong>
+        </p>
+
+        <div class="grand-total d-flex justify-content-between">
+            <span>Tổng cộng:</span>
+            <span>@Model.TotalAmount.ToString("N0") đ</span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Note))
+    {
+        <p class="mt-4">
+            <strong>Ghi chú:</strong> @Model.Note
+        </p>
+    }
+
+    <div class="invoice-signature">
+        <div>
+            <strong>Người lập phiếu</strong>
+            <p><em>(Ký, ghi rõ họ tên)</em></p>
+        </div>
+
+        <div>
+            <strong>Khách hàng</strong>
+            <p><em>(Ký, ghi rõ họ tên)</em></p>
+        </div>
+    </div>
+
+    <p class="text-center mt-5 text-muted">
+        Cảm ơn quý khách đã mua hàng!
+    </p>
+</div>

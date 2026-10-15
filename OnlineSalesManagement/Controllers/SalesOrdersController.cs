@@ -250,6 +250,40 @@ namespace OnlineSalesManagement.Controllers
                 }).ToList();
         }
 
+
+        // GET: /SalesOrders/Invoice/5
+        [HttpGet]
+        public ActionResult Invoice(int? id)
+        {
+            if (!id.HasValue)
+                return new HttpStatusCodeResult(
+                    HttpStatusCode.BadRequest);
+
+            var order = db.SalesOrders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.Details.Select(d => d.Product))
+                .FirstOrDefault(o => o.Id == id.Value);
+
+            if (order == null)
+                return HttpNotFound();
+
+            // Chỉ in hóa đơn khi đơn đã xác nhận xuất kho
+            // hoặc đã hoàn tất.
+            if (order.Status != OrderStatus.Confirmed &&
+                order.Status != OrderStatus.Completed)
+            {
+                TempData["Error"] =
+                    "Chỉ được in hóa đơn của đơn hàng đã xác nhận hoặc hoàn tất.";
+
+                return RedirectToAction(
+                    "Details", new { id = order.Id });
+            }
+
+            return View(order);
+        }
+
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
