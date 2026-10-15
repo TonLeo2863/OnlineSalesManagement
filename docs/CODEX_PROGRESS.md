@@ -24,3 +24,10 @@
 ## Git và bàn giao
 
 Commit công việc: chưa tạo. Push: chưa thực hiện. Sau commit ghi SHA vào mục kế tiếp bằng commit tài liệu riêng (SHA của commit không thể tự nằm trong chính nội dung commit đó). Tiến độ được lưu trước khi push; sau push ghi nhận kết quả thật.
+
+## Mốc commit đã kiểm chứng
+
+- 289832e: bảo vệ CRUD sản phẩm, ranh giới phân quyền controller, sửa reference và tài liệu. Build Debug + Razor đạt; chưa test HTTP/DB ghi.
+- Fetch origin thành công; origin/master cùng baseline 877c60b (0/0 trước commit).
+- SQL chỉ đọc: SQL Server 2022 phiên bản 16.0.1000.6; có 2 migration InitialCreate/AddShiftManagementTables; 1 user, chưa có role; 20 giao dịch kho; 0 sản phẩm lệch tổng QuantityChange. Chưa khẳng định model khớp toàn bộ schema.
+- Chuẩn bị push các commit này lên codex/dacn05-completion; chỉ ghi push thành công sau khi nhận kết quả.

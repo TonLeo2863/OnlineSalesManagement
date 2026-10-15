@@ -35,3 +35,7 @@
 | UI01 | Desktop/mobile, form lỗi, báo cáo/in A4, dữ liệu lớn | Đọc được, không mất dòng/đè chữ | Chưa chạy |
 
 Chỉ dùng dữ liệu kiểm thử được cho phép. Không xóa hoặc reset database thật để chạy các ca này.
+
+## Kiểm tra SQL chỉ đọc
+
+SQL Server 16.0.1000.6; __MigrationHistory có 2 migration tương ứng file source. 1 tài khoản, 0 role. 20 giao dịch; truy vấn đối chiếu Product.QuantityInStock với tổng QuantityChange: 0 sản phẩm lệch. Không chạy migration hoặc thay đổi dữ liệu. Fetch origin thành công; baseline trùng origin/master.
