@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -11,6 +11,7 @@ using OnlineSalesManagement.Models;
 
 namespace OnlineSalesManagement.Controllers
 {
+    [Authorize(Roles = "Admin,Kho")]
     public class SuppliersController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();

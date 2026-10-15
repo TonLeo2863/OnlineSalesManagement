@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -11,7 +11,7 @@ using OnlineSalesManagement.ViewModels;
 
 namespace OnlineSalesManagement.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,BanHang")]
     public class SalesOrdersController : Controller
     {
         private readonly ApplicationDbContext db =

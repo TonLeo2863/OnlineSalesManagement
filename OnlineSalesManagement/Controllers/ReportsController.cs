@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data.Entity;
 using System.Linq;
@@ -8,7 +8,7 @@ using OnlineSalesManagement.ViewModels;
 
 namespace OnlineSalesManagement.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext db =
