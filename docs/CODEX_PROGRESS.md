@@ -95,3 +95,9 @@ Commit công việc: chưa tạo. Push: chưa thực hiện. Sau commit ghi SHA 
 - Run-IntegrationTests.ps1: lần trong sandbox thất bại kết nối SQL do SSPI (The target principal name is incorrect); không coi là lỗi logic ứng dụng. Lần chạy lại ngoài sandbox được phê duyệt: exit 0, TOTAL INTEGRATION PASS 28. DB thử Dacn05_Test_3cbfd79b114b43f2badf1f2c6f2e361a được giữ lại; không sửa DB ứng dụng. 133 hash source tiếp tục khớp bản build.
 - Chưa kiểm chứng: HTTP login/logout/cookie/role, CRUD qua request thật, checkout thành công/truy cập đơn chéo owner qua HTTP, Complete qua HTTP/DB, cạnh tranh thực tế, UI/mobile/in A4/tải lớn; chưa chỉ định Admin đầu tiên, render Mermaid hoặc dàn trang DOCX/PPTX. 52 smoke/28 integration không chứng nhận các phần này.
 - Chỉ bàn giao thay đổi đã có; không phát triển tính năng mới, merge master, reset, xóa thay đổi cũ hoặc migration DB thật. Kết quả mới này thay thế trạng thái chưa build/test của các checkpoint lịch sử bên trên, không phải nghiệm thu toàn bộ đồ án.
+
+## Mốc bàn giao đã push — 16/10/2026
+
+- Commit source/tài liệu đã kiểm chứng: dd753f65e81c75e7ee110e7f7a76eec95a9ca8f4.
+- git push origin HEAD:refs/heads/codex/dacn05-completion exit 0; remote cập nhật 4866f63..dd753f6. Không force, không merge master.
+- Build/Razor đạt, 52 smoke PASS, 28 integration PASS (ngoài sandbox, DB thử riêng); giới hạn nghiệm thu giữ nguyên như mục xác minh ở trên.
