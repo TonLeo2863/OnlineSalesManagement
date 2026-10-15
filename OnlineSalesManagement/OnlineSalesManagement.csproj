@@ -176,6 +176,7 @@
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\ProductsController.cs" />
     <Compile Include="Controllers\PurchaseReceiptsController.cs" />
+    <Compile Include="Controllers\ReportsController.cs" />
     <Compile Include="Controllers\SalesOrdersController.cs" />
     <Compile Include="Controllers\SuppliersController.cs" />
     <Compile Include="Global.asax.cs">
@@ -184,6 +185,10 @@
     <Compile Include="Migrations\202610131032209_InitialCreate.cs" />
     <Compile Include="Migrations\202610131032209_InitialCreate.Designer.cs">
       <DependentUpon>202610131032209_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202610151148216_AddShiftManagementTables.cs" />
+    <Compile Include="Migrations\202610151148216_AddShiftManagementTables.Designer.cs">
+      <DependentUpon>202610151148216_AddShiftManagementTables.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -214,6 +219,7 @@
     <Compile Include="Services\SalesOrderService.cs" />
     <Compile Include="Services\ShiftManagementService.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="ViewModels\BusinessReportViewModel.cs" />
     <Compile Include="ViewModels\PurchaseReceiptCreateViewModel.cs" />
     <Compile Include="ViewModels\SalesOrderCreateViewModel.cs" />
   </ItemGroup>
@@ -317,6 +323,9 @@
     <Content Include="Views\SalesOrders\Details.cshtml" />
     <Content Include="Views\SalesOrders\Invoice.cshtml" />
     <Content Include="Views\InventoryReports\index.cshtml" />
+    <Content Include="Views\Reports\Purchases.cshtml" />
+    <Content Include="Views\Reports\Sales.cshtml" />
+    <Content Include="Views\Reports\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -351,6 +360,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202610131032209_InitialCreate.resx">
       <DependentUpon>202610131032209_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202610151148216_AddShiftManagementTables.resx">
+      <DependentUpon>202610151148216_AddShiftManagementTables.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

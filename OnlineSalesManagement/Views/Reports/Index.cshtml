@@ -1,0 +1,112 @@
+﻿
+@model OnlineSalesManagement.ViewModels.BusinessReportViewModel
+@{
+    ViewBag.Title = "Thống kê doanh thu";
+}
+
+<h2>Thống kê doanh thu</h2>
+
+<div class="mb-3">
+    @Html.ActionLink("Doanh thu", "Index", null,
+        new { @class = "btn btn-primary" })
+    @Html.ActionLink("Hàng nhập", "Purchases", null,
+        new { @class = "btn btn-outline-primary" })
+    @Html.ActionLink("Hàng xuất", "Sales", null,
+        new { @class = "btn btn-outline-primary" })
+</div>
+
+@using (Html.BeginForm("Index", "Reports",
+    FormMethod.Get, new { @class = "mb-3 no-print" }))
+{
+    @Html.ValidationSummary(false, "",
+        new { @class = "text-danger" })
+
+    <label>Từ ngày</label>
+    <input type="date" name="fromDate"
+           value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+
+    <label>Đến ngày</label>
+    <input type="date" name="toDate"
+           value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+
+    <button type="submit" class="btn btn-success">
+        Xem báo cáo
+    </button>
+}
+
+@if (ViewData.ModelState.IsValid)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Tổng đơn hợp lệ</span>
+                <h3>@Model.DocumentCount</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Doanh thu tại quầy</span>
+                <h3>@Model.CounterRevenue.ToString("N0") đ</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Doanh thu trực tuyến</span>
+                <h3>@Model.OnlineRevenue.ToString("N0") đ</h3>
+            </div>
+        </div>
+    </div>
+
+    <h4>
+        Tổng doanh thu:
+        @Model.TotalAmount.ToString("N0") đ
+    </h4>
+
+    <p>Tổng số lượng sản phẩm bán: @Model.TotalQuantity</p>
+
+    <button type="button" class="btn btn-secondary no-print"
+            onclick="window.print()">
+        In báo cáo
+    </button>
+
+    <table class="table table-bordered table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Số đơn</th>
+                <th>Ngày đặt</th>
+                <th>Khách hàng</th>
+                <th>Kênh bán</th>
+                <th>Tổng thanh toán</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        @Html.ActionLink(r.DocumentNumber,
+                            "Details", "SalesOrders",
+                            new { id = r.DocumentId }, null)
+                    </td>
+                    <td>@r.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@r.PartnerName</td>
+                    <td>@r.Channel</td>
+                    <td>@r.Amount.ToString("N0") đ</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="text-muted">
+        Doanh thu theo ngày đặt đơn và trạng thái hiện tại,
+        chưa phản ánh tiền đã thực thu hoặc lợi nhuận.
+    </p>
+}
+
+<style>
+    @@media print {
+        .no-print, nav, footer {
+            display: none !important;
+        }
+    }
+</style>

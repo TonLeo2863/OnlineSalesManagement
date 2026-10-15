@@ -1,0 +1,113 @@
+﻿
+@model OnlineSalesManagement.ViewModels.BusinessReportViewModel
+@{
+    ViewBag.Title = "Báo cáo hàng xuất";
+}
+
+<h2>Báo cáo hàng xuất kho</h2>
+
+<div class="mb-3">
+    @Html.ActionLink("Doanh thu", "Index", null,
+        new { @class = "btn btn-outline-primary" })
+    @Html.ActionLink("Hàng nhập", "Purchases", null,
+        new { @class = "btn btn-outline-primary" })
+    @Html.ActionLink("Hàng xuất", "Sales", null,
+        new { @class = "btn btn-primary" })
+</div>
+
+@using (Html.BeginForm("Sales", "Reports", FormMethod.Get,
+    new { @class = "no-print mb-3" }))
+{
+    @Html.ValidationSummary(false, "",
+        new { @class = "text-danger" })
+
+    <label>Từ ngày</label>
+    <input type="date" name="fromDate"
+           value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+
+    <label>Đến ngày</label>
+    <input type="date" name="toDate"
+           value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+
+    <button class="btn btn-success" type="submit">
+        Lọc
+    </button>
+}
+
+@if (ViewData.ModelState.IsValid)
+{
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Đơn hàng đã xuất</span>
+                <h3>@Model.DocumentCount</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Tổng số lượng xuất</span>
+                <h3>@Model.TotalQuantity</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <span>Giá trị hàng xuất</span>
+                <h3>@Model.TotalAmount.ToString("N0") đ</h3>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-secondary no-print"
+            onclick="window.print()">
+        In báo cáo
+    </button>
+
+    <div class="table-responsive mt-3">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Đơn hàng</th>
+                    <th>Ngày</th>
+                    <th>Khách hàng</th>
+                    <th>SKU</th>
+                    <th>Sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Giá bán</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td>
+                            @Html.ActionLink(r.DocumentNumber,
+                                "Details", "SalesOrders",
+                                new { id = r.DocumentId }, null)
+                        </td>
+                        <td>@r.Date.ToString("dd/MM/yyyy")</td>
+                        <td>@r.PartnerName</td>
+                        <td>@r.ProductSku</td>
+                        <td>@r.ProductName</td>
+                        <td>@r.Quantity</td>
+                        <td>@r.UnitPrice.ToString("N0") đ</td>
+                        <td>@r.Amount.ToString("N0") đ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted">
+        Giá trị hàng xuất tính trước giảm giá đơn hàng;
+        chỉ gồm đơn hiện ở trạng thái đã xác nhận hoặc hoàn tất.
+    </p>
+}
+
+<style>
+    @@media print {
+        .no-print, nav, footer {
+            display: none !important;
+        }
+    }
+</style>
