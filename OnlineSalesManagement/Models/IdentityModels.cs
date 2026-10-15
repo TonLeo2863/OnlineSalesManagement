@@ -46,6 +46,9 @@ namespace OnlineSalesManagement.Models
             InventoryShiftAuditLogs
         { get; set; }
 
+        public DbSet<InventoryShiftOpeningStock>
+            InventoryShiftOpeningStocks
+        { get; set; }
 
         public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)

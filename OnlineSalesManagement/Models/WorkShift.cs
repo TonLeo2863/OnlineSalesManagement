@@ -56,5 +56,11 @@ namespace OnlineSalesManagement
 
         [Timestamp]
         public byte[] RowVersion { get; set; }
+
+        public int? OpeningTransactionId { get; set; }
+
+        public int? ClosingTransactionId { get; set; }
+
+
     }
 }

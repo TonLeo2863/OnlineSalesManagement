@@ -126,6 +126,23 @@ namespace OnlineSalesManagement
                 .Property(x => x.StockValue)
                 .HasPrecision(18, 2);
 
+
+            modelBuilder.Entity<InventoryShiftOpeningStock>()
+                .Property(x => x.OpeningUnitCost)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<InventoryShiftOpeningStock>()
+                .HasRequired(x => x.WorkShift)
+                .WithMany()
+                .HasForeignKey(x => x.WorkShiftId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<InventoryShiftOpeningStock>()
+                .HasRequired(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .WillCascadeOnDelete(false);
+
         }
     }
 }

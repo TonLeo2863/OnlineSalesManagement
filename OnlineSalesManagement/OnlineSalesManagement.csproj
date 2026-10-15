@@ -193,6 +193,7 @@
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\InventoryShiftAuditLog.cs" />
+    <Compile Include="Models\InventoryShiftOpeningStock.cs" />
     <Compile Include="Models\InventoryShiftSnapshot.cs" />
     <Compile Include="Models\InventoryShiftSnapshotDetail.cs" />
     <Compile Include="Models\InventoryTransaction.cs" />

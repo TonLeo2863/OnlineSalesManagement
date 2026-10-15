@@ -195,6 +195,45 @@ namespace OnlineSalesManagement.Services
                     throw new UnauthorizedAccessException(
                         "Bạn không được phân công ca này.");
 
+
+                // Khóa các sản phẩm trong transaction khi chụp tồn đầu ca.
+                // Các Service kho hiện tại cũng khóa dòng Product
+                // trước khi cập nhật tồn.
+                var products = db.Products.SqlQuery(
+                    "SELECT * FROM [Products] WITH (UPDLOCK, HOLDLOCK) " +
+                    "ORDER BY [Id]"
+                ).ToList();
+
+                if (db.InventoryShiftOpeningStocks
+                    .Any(x => x.WorkShiftId == shift.Id))
+                {
+                    throw new InvalidOperationException(
+                        "Ca đã có dữ liệu tồn đầu. Không được mở lại.");
+                }
+
+                var capturedAt = DateTime.Now;
+
+                foreach (var product in products)
+                {
+                    db.InventoryShiftOpeningStocks.Add(
+                        new InventoryShiftOpeningStock
+                        {
+                            WorkShiftId = shift.Id,
+                            ProductId = product.Id,
+                            ProductSku = product.Sku,
+                            ProductName = product.Name,
+                            Unit = product.Unit,
+                            OpeningQuantity = product.QuantityInStock,
+                            OpeningUnitCost = product.CostPrice,
+                            CapturedAt = capturedAt
+                        });
+                }
+
+                shift.OpeningTransactionId =
+                    db.InventoryTransactions
+                      .Select(x => (int?)x.Id)
+                      .Max() ?? 0;
+
                 shift.Status = WorkShiftStatus.Open;
                 shift.ActualStart = DateTime.Now;
                 shift.OpenedByUserId = userId;
