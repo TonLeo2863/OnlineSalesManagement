@@ -1,0 +1,12 @@
+@model OnlineSalesManagement.SalesOrder
+@{ ViewBag.Title = "Chi tiết đơn của tôi"; }
+<h2>Đơn @Model.OrderNumber</h2>
+<p>Ngày đặt: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm") · Trạng thái: @Html.DisplayFor(m => m.Status)</p>
+<p>Giao đến: @Model.ShippingAddress</p><p>@Model.Note</p>
+<p>Thanh toán: @Html.DisplayFor(m => m.PaymentMethod) · @Html.DisplayFor(m => m.PaymentStatus)</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá lúc đặt</th><th>Thành tiền</th></tr></thead><tbody>
+@foreach (var d in Model.Details) { <tr><td>@d.Product.Name</td><td>@d.Quantity</td><td>@d.UnitPrice.ToString("N0") đ</td><td>@((d.Quantity * d.UnitPrice).ToString("N0")) đ</td></tr> }
+</tbody></table></div>
+<p>Tạm tính: @Model.SubTotal.ToString("N0") đ · Giảm giá: @Model.DiscountAmount.ToString("N0") đ</p>
+<p><strong>Tổng thanh toán: @Model.TotalAmount.ToString("N0") đ</strong></p>
+<p>@Html.ActionLink("Đơn của tôi", "Orders")</p>

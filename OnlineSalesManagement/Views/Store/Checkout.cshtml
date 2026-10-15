@@ -1,0 +1,14 @@
+@model OnlineSalesManagement.Controllers.OnlineCheckoutModel
+@{ ViewBag.Title = "Đặt hàng"; }
+<h2>Đặt hàng: @Model.ProductName</h2>
+<p>Giá hiện tại: @Model.SalePrice.ToString("N0") đ. Giá được lấy lại từ server khi tạo đơn.</p>
+@using (Html.BeginForm("Checkout", "Store", FormMethod.Post)) {
+    @Html.AntiForgeryToken() @Html.HiddenFor(m => m.ProductId) @Html.HiddenFor(m => m.Token)
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+    <div class="mb-3"><label for="Quantity">Số lượng</label>@Html.TextBoxFor(m => m.Quantity, new { type = "number", min = "1", max = "1000", @class = "form-control" })</div>
+    <div class="mb-3"><label for="FullName">Người nhận</label>@Html.TextBoxFor(m => m.FullName, new { @class = "form-control", maxlength = "150" })</div>
+    <div class="mb-3"><label for="PhoneNumber">Số điện thoại</label>@Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", maxlength = "20" })</div>
+    <div class="mb-3"><label for="ShippingAddress">Địa chỉ giao hàng</label>@Html.TextAreaFor(m => m.ShippingAddress, new { @class = "form-control", maxlength = "300" })</div>
+    <p>Thanh toán khi nhận hàng. Đặt hàng chưa giữ hoặc trừ tồn kho.</p>
+    <button type="submit" class="btn btn-primary">Tạo đơn chờ xác nhận</button>
+}

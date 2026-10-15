@@ -215,6 +215,19 @@ namespace OnlineSalesManagement.Controllers
                 "Details", new { id = id });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Complete(int id)
+        {
+            try
+            {
+                service.CompleteOrder(id);
+                TempData["Success"] = "Đã hoàn tất đơn hàng. Trạng thái thanh toán được giữ nguyên.";
+            }
+            catch (InvalidOperationException ex) { TempData["Error"] = ex.Message; }
+            return RedirectToAction("Details", new { id = id });
+        }
+
         private void LoadDropdowns(
             SalesOrderCreateViewModel model)
         {

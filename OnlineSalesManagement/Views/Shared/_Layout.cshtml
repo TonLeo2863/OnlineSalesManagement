@@ -1,4 +1,4 @@
-﻿@using System.Linq
+@using System.Linq
 @using System.Collections.Generic
 @functions {
     // Danh sách Controller THỰC SỰ có trong project (có action Index), tính một lần khi view được nạp.
@@ -20,6 +20,14 @@
         return set;
     }
 
+    private bool CanAccess(string name)
+    {
+        if (name == "Store" || name == "Home") return true;
+        var type = typeof(OnlineSalesManagement.Controllers.HomeController).Assembly.GetType("OnlineSalesManagement.Controllers." + name + "Controller");
+        if (type == null) return false;
+        return type.GetCustomAttributes(typeof(System.Web.Mvc.AuthorizeAttribute), true).Cast<System.Web.Mvc.AuthorizeAttribute>().All(a => User.Identity.IsAuthenticated && (string.IsNullOrEmpty(a.Roles) || a.Roles.Split(',').Any(r => User.IsInRole(r.Trim()))));
+    }
+
     private static bool HasController(string name)
     {
         return AvailableControllers.Contains(name);
@@ -29,6 +37,9 @@
     // ===== Cấu hình menu quản trị: sửa ở đây nếu tên Controller của bạn khác =====
     var menu = new[]
     {
+        new { Section = "Mua hàng", Text = "Cửa hàng trực tuyến", Icon = "bi-cart", Controller = "Store" },
+        new { Section = "Hệ thống", Text = "Người dùng", Icon = "bi-person-lock", Controller = "AdminUsers" },
+        new { Section = "Kho", Text = "Tồn kho", Icon = "bi-box", Controller = "InventoryReports" },
         new { Section = "",                    Text = "Tổng quan",   Icon = "bi-speedometer2",     Controller = "Home" },
         new { Section = "Hàng hóa",            Text = "Sản phẩm",    Icon = "bi-box-seam",         Controller = "Products" },
         new { Section = "Hàng hóa",            Text = "Danh mục",    Icon = "bi-tags",             Controller = "Categories" },
@@ -52,6 +63,17 @@
     @Styles.Render("~/Content/css")
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link href="~/Content/admin.css" rel="stylesheet" type="text/css" />
+    <style>
+        @@media print {
+            @@page { size: A4; margin: 12mm; }
+            .sidebar, .sidebar-overlay, .topbar, .admin-footer, .no-print { display: none !important; }
+            .main { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+            .admin-content { padding: 0 !important; }
+            .table-responsive { overflow: visible !important; }
+            thead { display: table-header-group; }
+            tr { break-inside: avoid; }
+        }
+    </style>
 </head>
 <body class="admin-body">
 
@@ -67,6 +89,7 @@
         <nav class="sidebar-nav" aria-label="Menu quản trị">
             @foreach (var item in menu)
             {
+                if (!CanAccess(item.Controller)) { continue; }
                 if (item.Section != lastSection)
                 {
                     lastSection = item.Section;

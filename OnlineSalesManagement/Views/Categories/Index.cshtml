@@ -1,0 +1,16 @@
+@model IEnumerable<OnlineSalesManagement.Category>
+@{ ViewBag.Title = "Danh mục sản phẩm"; }
+<h2>Danh mục sản phẩm</h2>
+@if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+<p>@Html.ActionLink("Thêm danh mục", "Create", null, new { @class = "btn btn-primary" })</p>
+<div class="table-responsive"><table class="table table-striped">
+    <thead><tr><th>Tên</th><th>Mô tả</th><th>Đang sử dụng</th><th>Thao tác</th></tr></thead>
+    <tbody>@foreach (var item in Model) {
+        <tr><td>@item.Name</td><td>@item.Description</td><td>@(item.IsActive ? "Có" : "Không")</td><td>
+            @Html.ActionLink("Sửa", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-primary" })
+            @using (Html.BeginForm("Delete", "Categories", new { id = item.Id }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Xóa danh mục này?');" })) {
+                @Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+            }
+        </td></tr>
+    }</tbody>
+</table></div>

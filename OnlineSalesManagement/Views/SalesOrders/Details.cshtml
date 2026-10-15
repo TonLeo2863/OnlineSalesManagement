@@ -40,6 +40,15 @@
 
 <h4>Chi tiết sản phẩm</h4>
 
+@if (Model.Status == OnlineSalesManagement.OrderStatus.Confirmed)
+{
+    using (Html.BeginForm("Complete", "SalesOrders", new { id = Model.Id }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <button class="btn btn-outline-success mb-3" type="submit" onclick="return confirm('Hoàn tất đơn? Không thể hủy trực tiếp sau bước này.');">Hoàn tất đơn hàng</button>
+    }
+}
+
 <table class="table table-bordered table-striped">
     <thead>
         <tr>

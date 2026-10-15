@@ -55,6 +55,13 @@ namespace OnlineSalesManagement.Controllers
             ViewBag.LowStockCount = products.Count(
                 p => p.QuantityInStock <= p.ReorderLevel);
 
+            var ledger = db.InventoryTransactions.AsNoTracking()
+                .GroupBy(t => t.ProductId)
+                .Select(g => new { ProductId = g.Key, Quantity = g.Sum(t => (long)t.QuantityChange) })
+                .ToDictionary(g => g.ProductId, g => g.Quantity);
+            ViewBag.ReconciliationMismatchCount = products.Count(p =>
+                p.QuantityInStock != (ledger.ContainsKey(p.Id) ? ledger[p.Id] : 0L));
+
             ViewBag.RecentTransactions = db.InventoryTransactions
                 .Include(t => t.Product)
                 .AsNoTracking()

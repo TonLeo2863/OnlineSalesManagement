@@ -1,0 +1,7 @@
+@model IEnumerable<OnlineSalesManagement.InventoryTransaction>
+@{ ViewBag.Title = "Hoạt động kho"; }
+<h2>200 giao dịch kho gần nhất</h2>
+<p>Nhật ký này ghi các biến động kho; chưa phải nhật ký toàn bộ thao tác quản trị người dùng.</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Thời điểm</th><th>Người thực hiện</th><th>Sản phẩm</th><th>Loại</th><th>Thay đổi</th><th>Tồn sau</th></tr></thead><tbody>
+@foreach (var item in Model) { <tr><td>@item.TransactionDate.ToString("dd/MM/yyyy HH:mm:ss")</td><td>@item.CreatedBy</td><td>@item.ProductId</td><td>@item.TransactionType</td><td>@item.QuantityChange</td><td>@item.StockAfter</td></tr> }
+</tbody></table></div>

@@ -41,3 +41,35 @@ Kho tạo phiếu nháp rồi xác nhận; bán hàng tạo đơn Pending rồi 
 ## Chạy smoke test
 
 Sau build: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\Run-SmokeTests.ps1 (chỉ tiến trình này, không sửa policy máy). Không truy vấn/ghi database. Nhập/xuất hiện đã sửa source dùng ngày giao dịch kho và giá snapshot; vẫn cần kiểm chứng HTTP/SQL trước dùng làm số liệu bàn giao.
+
+
+## Khôi phục thực thi Codex Windows
+
+Cấu hình người dùng hiện dùng [windows] sandbox = "elevated". Lỗi setup refresh had errors xảy ra trước process, không phải lỗi build. Dừng retry/escalation lặp lại. Theo tài liệu https://learn.chatgpt.com/docs/windows/windows-sandbox: đóng/mở lại Codex; nếu cần, dùng PowerShell Administrator để provision lại elevated sandbox với `codex sandbox setup --elevated --user "DOMAIN\user" --codex-home "C:\Users\user\.codex"`, thay đúng tài khoản thực tế. Nếu chính sách máy cho phép và setup vẫn thất bại, có thể chọn [windows] sandbox = "unelevated" làm fallback tạm, với cô lập mạng yếu hơn. Không xóa .codex hoặc thay ACL hàng loạt. Sau khởi động lại, kiểm tra duy nhất một lệnh chỉ đọc trong sandbox trước build/test; không coi lệnh ngoài sandbox là bằng chứng sandbox đã sửa. Giữ nguyên code và database.
+
+
+## Audit cấu trúc độc lập MSBuild
+
+Nếu Node.js có sẵn, tại repository:
+
+~~~powershell
+node --input-type=module -e "import { checkSource } from './tests/Check-Source.mjs'; console.log(await checkSource(process.cwd()));"
+~~~
+
+Checker chỉ đọc source/csproj, kiểm tra UTF-8 và POST nhận diện được; không build C#, chạy IIS hoặc kết nối SQL. Lượt này đã chạy checker bằng Node tool không gọi shell. Không tự thay quyền Windows hoặc chạy tiến trình qua công cụ khác để vượt sandbox.
+
+Code mới phải build/test lại sau khi shell phục hồi, đặc biệt guard thiếu UserId và token owner/product. Chưa commit/push bản chưa kiểm chứng. Database thử cũ giữ nguyên.
+
+
+## Kiểm tra cùng một snapshot source
+
+Sau khi môi trường thực thi và ghi workspace hoạt động, trong Developer PowerShell tại repository:
+
+~~~powershell
+& .	estsVerify-Dacn05.ps1
+& .	estsVerify-Dacn05.ps1 -IncludeIntegration
+~~~
+
+Không cần chạy cả hai nếu đã chọn chạy trực tiếp bản có integration. Runner không thay đổi ExecutionPolicy; dùng môi trường được phép chạy script theo chính sách máy hiện có. Nếu bị chặn, ghi lỗi và xử lý theo chính sách quản trị, không tự thay bảo mật Windows.
+
+Runner Rebuild Debug/Razor trước test; dừng ngay khi build thất bại để tránh chạy DLL cũ. Integration tạo DB mới Dacn05_Test_<GUID>, chỉ chạy migration Up trên DB thử tách biệt và giữ DB lại. Không sửa/drop DB thật. Kết quả/hash source lưu artifacts/verification/*.json, thư mục bị ignore; giữ log locally làm bằng chứng. Runner chưa chạy trong lượt công cụ exec bị lỗi; không coi file script là kết quả kiểm thử.
