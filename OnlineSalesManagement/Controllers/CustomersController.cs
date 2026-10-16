@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -11,6 +12,7 @@ using OnlineSalesManagement.Models;
 
 namespace OnlineSalesManagement.Controllers
 {
+    [Authorize(Roles = "Admin,BanHang")]
     public class CustomersController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -49,13 +51,13 @@ namespace OnlineSalesManagement.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,IsActive,CreatedDate,UserId")] Customer customer)
+        public ActionResult Create([Bind(Include = "Code,FullName,Email,PhoneNumber,Address,IsActive")] Customer customer)
         {
+            ValidateRecord(customer);
             if (ModelState.IsValid)
             {
                 db.Customers.Add(customer);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                if (SaveRecord()) return RedirectToAction("Index");
             }
 
             ViewBag.UserId = new SelectList(db.Users, "Id", "Email", customer.UserId);
@@ -83,13 +85,17 @@ namespace OnlineSalesManagement.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,IsActive,CreatedDate,UserId")] Customer customer)
+        public ActionResult Edit([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,IsActive")] Customer customer)
         {
+            ValidateRecord(customer);
             if (ModelState.IsValid)
             {
-                db.Entry(customer).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                var current = db.Customers.Find(customer.Id);
+                if (current == null) return HttpNotFound();
+                customer.CreatedDate = current.CreatedDate;
+                customer.UserId = current.UserId;
+                db.Entry(current).CurrentValues.SetValues(customer);
+                if (SaveRecord()) return RedirectToAction("Index");
             }
             ViewBag.UserId = new SelectList(db.Users, "Id", "Email", customer.UserId);
             return View(customer);
@@ -116,9 +122,27 @@ namespace OnlineSalesManagement.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Customer customer = db.Customers.Find(id);
+            if (customer == null) return HttpNotFound();
+            if (db.SalesOrders.Any(o => o.CustomerId == id))
+            {
+                ModelState.AddModelError("", "Dữ liệu có chứng từ liên quan. Hãy ngừng hoạt động thay vì xóa.");
+                return View("Delete", customer);
+            }
             db.Customers.Remove(customer);
-            db.SaveChanges();
+            if (!SaveRecord()) return View("Delete", customer);
             return RedirectToAction("Index");
+        }
+
+        private void ValidateRecord(Customer model)
+        {
+            model.Code = (model.Code ?? "").Trim();
+            if (db.Customers.Any(x => x.Code == model.Code && x.Id != model.Id))
+                ModelState.AddModelError("Code", "Mã đã tồn tại.");
+        }
+        private bool SaveRecord()
+        {
+            try { db.SaveChanges(); return true; }
+            catch (DbUpdateException) { ModelState.AddModelError("", "Không thể lưu: mã trùng, liên kết hoặc dữ liệu vừa thay đổi. Vui lòng tải lại và kiểm tra."); return false; }
         }
 
         protected override void Dispose(bool disposing)

@@ -1,0 +1,254 @@
+classDiagram
+%% Generated from saved model declarations; preparation-only shift classes are retained.
+    class Category {
+        int Id
+        string Name
+        string Description
+        bool IsActive
+        ICollection~Product~ Products
+    }
+    class Customer {
+        int Id
+        string Code
+        string FullName
+        string Email
+        string PhoneNumber
+        string Address
+        bool IsActive
+        DateTime CreatedDate
+        string UserId
+        ApplicationUser User
+        ICollection~SalesOrder~ SalesOrders
+    }
+    class Employee {
+        int Id
+        string Code
+        string FullName
+        string Email
+        string PhoneNumber
+        string Address
+        string Position
+        DateTime HireDate
+        bool IsActive
+        string UserId
+        ApplicationUser User
+        ICollection~PurchaseReceipt~ PurchaseReceipts
+        ICollection~SalesOrder~ SalesOrders
+    }
+    class Supplier {
+        int Id
+        string Code
+        string Name
+        string ContactPerson
+        string Email
+        string PhoneNumber
+        string Address
+        string TaxCode
+        bool IsActive
+        ICollection~PurchaseReceipt~ PurchaseReceipts
+    }
+    class Product {
+        int Id
+        string Sku
+        string Name
+        string Description
+        int CategoryId
+        Category Category
+        string Unit
+        decimal CostPrice
+        decimal SalePrice
+        int QuantityInStock
+        int ReorderLevel
+        string ImageUrl
+        bool IsActive
+        DateTime CreatedDate
+        byteArray RowVersion
+        ICollection~PurchaseReceiptDetail~ PurchaseReceiptDetails
+        ICollection~SalesOrderDetail~ SalesOrderDetails
+        ICollection~InventoryTransaction~ InventoryTransactions
+    }
+    class PurchaseReceipt {
+        int Id
+        string ReceiptNumber
+        DateTime ReceiptDate
+        int SupplierId
+        Supplier Supplier
+        int EmployeeId
+        Employee Employee
+        ReceiptStatus Status
+        string Note
+        decimal TotalAmount
+        ICollection~PurchaseReceiptDetail~ Details
+        ICollection~InventoryTransaction~ InventoryTransactions
+    }
+    class PurchaseReceiptDetail {
+        int Id
+        int PurchaseReceiptId
+        PurchaseReceipt PurchaseReceipt
+        int ProductId
+        Product Product
+        int Quantity
+        decimal UnitCost
+    }
+    class SalesOrder {
+        int Id
+        string OrderNumber
+        DateTime OrderDate
+        int CustomerId
+        Customer Customer
+        int? EmployeeId
+        Employee Employee
+        SalesChannel Channel
+        OrderStatus Status
+        PaymentMethod PaymentMethod
+        PaymentStatus PaymentStatus
+        string ShippingAddress
+        string Note
+        decimal SubTotal
+        decimal DiscountAmount
+        decimal TotalAmount
+        ICollection~SalesOrderDetail~ Details
+        ICollection~InventoryTransaction~ InventoryTransactions
+    }
+    class SalesOrderDetail {
+        int Id
+        int SalesOrderId
+        SalesOrder SalesOrder
+        int ProductId
+        Product Product
+        int Quantity
+        decimal UnitPrice
+    }
+    class InventoryTransaction {
+        int Id
+        int ProductId
+        Product Product
+        DateTime TransactionDate
+        InventoryTransactionType TransactionType
+        int QuantityChange
+        int StockAfter
+        decimal UnitPrice
+        int? PurchaseReceiptId
+        PurchaseReceipt PurchaseReceipt
+        int? SalesOrderId
+        SalesOrder SalesOrder
+        string Note
+        string CreatedBy
+    }
+    class ShiftTemplate {
+        int Id
+        string Name
+        TimeSpan StartTime
+        TimeSpan EndTime
+        bool EndsNextDay
+        bool IsActive
+        bool IsSystemDefault
+    }
+    class WorkShift {
+        int Id
+        string Name
+        int? ShiftTemplateId
+        ShiftTemplate ShiftTemplate
+        DateTime ScheduledStart
+        DateTime ScheduledEnd
+        DateTime? ActualStart
+        DateTime? ActualEnd
+        string AssignedUserId
+        string OpenedByUserId
+        string ClosedByUserId
+        WorkShiftStatus Status
+        string Note
+        byteArray RowVersion
+        int? OpeningTransactionId
+        int? ClosingTransactionId
+    }
+    class InventoryShiftOpeningStock {
+        int Id
+        int WorkShiftId
+        WorkShift WorkShift
+        int ProductId
+        Product Product
+        string ProductSku
+        string ProductName
+        string Unit
+        int OpeningQuantity
+        decimal OpeningUnitCost
+        DateTime CapturedAt
+    }
+    class InventoryShiftSnapshot {
+        int Id
+        int WorkShiftId
+        WorkShift WorkShift
+        int Version
+        DateTime PeriodStart
+        DateTime PeriodEnd
+        int OpeningTransactionId
+        int ClosingTransactionId
+        int TotalProducts
+        long TotalSystemQuantity
+        long? TotalActualQuantity
+        decimal TotalStockValue
+        string CreatedByUserId
+        DateTime CreatedAt
+        string Note
+        int? PreviousSnapshotId
+        InventoryShiftSnapshot PreviousSnapshot
+        byteArray RowVersion
+        ICollection~InventoryShiftSnapshotDetail~ Details
+        ICollection~InventoryShiftAuditLog~ AuditLogs
+    }
+    class InventoryShiftSnapshotDetail {
+        int Id
+        int SnapshotId
+        InventoryShiftSnapshot Snapshot
+        int ProductId
+        Product Product
+        string ProductSku
+        string ProductName
+        string Unit
+        int OpeningQuantity
+        int ImportedQuantity
+        int ExportedQuantity
+        int AdjustmentQuantity
+        int ClosingSystemQuantity
+        int? ActualQuantity
+        int? DifferenceQuantity
+        decimal UnitCost
+        decimal StockValue
+        string Note
+    }
+    class InventoryShiftAuditLog {
+        int Id
+        int WorkShiftId
+        WorkShift WorkShift
+        int? SnapshotId
+        InventoryShiftSnapshot Snapshot
+        InventoryShiftAuditAction Action
+        string PerformedByUserId
+        DateTime ActionTime
+        string FieldName
+        string OldValue
+        string NewValue
+        string Reason
+    }
+    Product --> Category : Category
+    PurchaseReceipt --> Supplier : Supplier
+    PurchaseReceipt --> Employee : Employee
+    PurchaseReceiptDetail --> PurchaseReceipt : PurchaseReceipt
+    PurchaseReceiptDetail --> Product : Product
+    SalesOrder --> Customer : Customer
+    SalesOrder --> Employee : Employee
+    SalesOrderDetail --> SalesOrder : SalesOrder
+    SalesOrderDetail --> Product : Product
+    InventoryTransaction --> Product : Product
+    InventoryTransaction --> PurchaseReceipt : PurchaseReceipt
+    InventoryTransaction --> SalesOrder : SalesOrder
+    WorkShift --> ShiftTemplate : ShiftTemplate
+    InventoryShiftOpeningStock --> WorkShift : WorkShift
+    InventoryShiftOpeningStock --> Product : Product
+    InventoryShiftSnapshot --> WorkShift : WorkShift
+    InventoryShiftSnapshot --> InventoryShiftSnapshot : PreviousSnapshot
+    InventoryShiftSnapshotDetail --> InventoryShiftSnapshot : Snapshot
+    InventoryShiftSnapshotDetail --> Product : Product
+    InventoryShiftAuditLog --> WorkShift : WorkShift
+    InventoryShiftAuditLog --> InventoryShiftSnapshot : Snapshot

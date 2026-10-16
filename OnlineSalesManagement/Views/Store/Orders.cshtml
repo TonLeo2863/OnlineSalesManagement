@@ -1,0 +1,6 @@
+@model IEnumerable<OnlineSalesManagement.SalesOrder>
+@{ ViewBag.Title = "Đơn của tôi"; }
+<h2>Đơn của tôi</h2><p>@Html.ActionLink("Tiếp tục mua", "Index")</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Số đơn</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng thanh toán</th></tr></thead><tbody>
+@foreach (var item in Model) { <tr><td>@Html.ActionLink(item.OrderNumber, "Details", new { id = item.Id })</td><td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td><td>@Html.DisplayFor(m => item.Status)</td><td>@item.TotalAmount.ToString("N0") đ</td></tr> }
+</tbody></table></div>

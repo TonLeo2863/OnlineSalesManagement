@@ -1,4 +1,4 @@
-﻿
+
 @model OnlineSalesManagement.ViewModels.BusinessReportViewModel
 @{
     ViewBag.Title = "Báo cáo hàng xuất";
@@ -67,7 +67,7 @@
             <thead>
                 <tr>
                     <th>Đơn hàng</th>
-                    <th>Ngày</th>
+                    <th>Ngày giao dịch kho</th>
                     <th>Khách hàng</th>
                     <th>SKU</th>
                     <th>Sản phẩm</th>
@@ -99,13 +99,17 @@
     </div>
 
     <p class="text-muted">
-        Giá trị hàng xuất tính trước giảm giá đơn hàng;
-        chỉ gồm đơn hiện ở trạng thái đã xác nhận hoặc hoàn tất.
+        Lọc theo ngày xác nhận xuất từ lịch sử kho, số lượng và đơn giá tại giao dịch. Giá trị trước giảm giá đơn hàng;
+        chỉ gồm đơn hiện đã xác nhận hoặc hoàn tất, loại đơn đã hủy. Không phải sổ biến động ròng gồm hoàn/hủy.
     </p>
 }
 
 <style>
+    @@page { size: A4 landscape; margin: 12mm; }
     @@media print {
+        .table-responsive { overflow: visible !important; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; }
         .no-print, nav, footer {
             display: none !important;
         }

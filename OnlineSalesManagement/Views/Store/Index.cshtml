@@ -1,0 +1,16 @@
+@model IEnumerable<OnlineSalesManagement.Product>
+@{ ViewBag.Title = "Mua hàng trực tuyến"; }
+<h2>Mua hàng trực tuyến</h2>
+<p>@Html.ActionLink("Đơn của tôi", "Orders")</p>
+@using (Html.BeginForm("Index", "Store", FormMethod.Get)) { <div class="input-group mb-3"><input name="q" value="@Request.QueryString["q"]" class="form-control" placeholder="Tìm tên hoặc SKU" /><button class="btn btn-primary" type="submit">Tìm</button></div> }
+<p class="text-muted">Hiển thị tối đa 200 sản phẩm; dùng tìm kiếm để thu hẹp. Đơn đặt hàng chờ nhân viên xác nhận, thanh toán khi nhận hàng.</p>
+<div class="row">
+@foreach (var p in Model) {
+    <div class="col-sm-6 col-lg-4 mb-3"><div class="card h-100"><div class="card-body">
+        <h3 class="h5">@p.Name</h3><p>@p.Sku</p><p>@p.Description</p>
+        <p>@p.SalePrice.ToString("N0") đ · Tồn hiện tại: @p.QuantityInStock</p>
+        @if (p.QuantityInStock > 0) { @Html.ActionLink("Chọn mua", "Checkout", new { id = p.Id }, new { @class = "btn btn-primary" }) }
+        else { <span class="text-muted">Tạm hết hàng</span> }
+    </div></div></div>
+}
+</div>

@@ -1,0 +1,8 @@
+@{ ViewBag.Title = "Chào mừng"; }
+<section class="dashboard-hero"><div><span class="dashboard-eyebrow">CỬA HÀNG TRỰC TUYẾN</span><h1>Mua sắm thuận tiện,<br />theo dõi đơn dễ dàng.</h1><p>Khám phá sản phẩm và đặt hàng để được nhân viên xác nhận.</p>@Html.ActionLink("Khám phá cửa hàng", "Index", "Store", null, new { @class = "btn btn-light btn-lg" })</div></section>
+<div class="dashboard-panels">
+<section class="panel dashboard-actions"><h2>Sản phẩm dành cho bạn</h2><p>Xem giá và tình trạng hàng hiện tại tại cửa hàng trực tuyến.</p>@Html.ActionLink("Xem sản phẩm →", "Index", "Store")</section>
+<section class="panel dashboard-actions"><h2>Đơn hàng của tôi</h2>
+@if (User.Identity.IsAuthenticated) { <p>Theo dõi những đơn hàng thuộc tài khoản của bạn.</p>@Html.ActionLink("Xem đơn của tôi →", "Orders", "Store") }
+else { <p>Đăng nhập để đặt hàng và theo dõi đơn của bạn.</p>@Html.ActionLink("Đăng nhập →", "Login", "Account") }
+</section></div>

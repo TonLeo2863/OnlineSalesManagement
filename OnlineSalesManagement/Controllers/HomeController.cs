@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using OnlineSalesManagement.Models;
+using OnlineSalesManagement.Services;
 
 namespace OnlineSalesManagement.Controllers
 {
@@ -10,7 +12,9 @@ namespace OnlineSalesManagement.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            if (!DashboardService.IsStaff(User)) return View("Welcome");
+            using (var db = new ApplicationDbContext())
+                return View(DashboardService.Load(db, User));
         }
 
         public ActionResult About()

@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -11,6 +12,7 @@ using OnlineSalesManagement.Models;
 
 namespace OnlineSalesManagement.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class EmployeesController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -49,13 +51,13 @@ namespace OnlineSalesManagement.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee)
+        public ActionResult Create([Bind(Include = "Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee)
         {
+            ValidateRecord(employee);
             if (ModelState.IsValid)
             {
                 db.Employees.Add(employee);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                if (SaveRecord()) return RedirectToAction("Index");
             }
 
             ViewBag.UserId = new SelectList(db.Users, "Id", "Email", employee.UserId);
@@ -85,11 +87,13 @@ namespace OnlineSalesManagement.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee)
         {
+            ValidateRecord(employee);
             if (ModelState.IsValid)
             {
-                db.Entry(employee).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                var current = db.Employees.Find(employee.Id);
+                if (current == null) return HttpNotFound();
+                db.Entry(current).CurrentValues.SetValues(employee);
+                if (SaveRecord()) return RedirectToAction("Index");
             }
             ViewBag.UserId = new SelectList(db.Users, "Id", "Email", employee.UserId);
             return View(employee);
@@ -116,9 +120,29 @@ namespace OnlineSalesManagement.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Employee employee = db.Employees.Find(id);
+            if (employee == null) return HttpNotFound();
+            if (db.PurchaseReceipts.Any(r => r.EmployeeId == id) || db.SalesOrders.Any(o => o.EmployeeId == id))
+            {
+                ModelState.AddModelError("", "Dữ liệu có chứng từ liên quan. Hãy ngừng hoạt động thay vì xóa.");
+                return View("Delete", employee);
+            }
             db.Employees.Remove(employee);
-            db.SaveChanges();
+            if (!SaveRecord()) return View("Delete", employee);
             return RedirectToAction("Index");
+        }
+
+        private void ValidateRecord(Employee model)
+        {
+            model.Code = (model.Code ?? "").Trim();
+            if (db.Employees.Any(x => x.Code == model.Code && x.Id != model.Id))
+                ModelState.AddModelError("Code", "Mã đã tồn tại.");
+            if (!string.IsNullOrEmpty(model.UserId) && !db.Users.Any(u => u.Id == model.UserId))
+                ModelState.AddModelError("UserId", "Tài khoản không tồn tại.");
+        }
+        private bool SaveRecord()
+        {
+            try { db.SaveChanges(); return true; }
+            catch (DbUpdateException) { ModelState.AddModelError("", "Không thể lưu: mã trùng, liên kết hoặc dữ liệu vừa thay đổi. Vui lòng tải lại và kiểm tra."); return false; }
         }
 
         protected override void Dispose(bool disposing)

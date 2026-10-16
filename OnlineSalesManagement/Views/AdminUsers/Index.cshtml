@@ -1,0 +1,20 @@
+@model IEnumerable<OnlineSalesManagement.Controllers.UserRoleRow>
+@{ ViewBag.Title = "Người dùng và vai trò"; }
+<h2>Người dùng và vai trò</h2>
+<p>Mỗi lần lưu chọn một vai trò chính, thay thế các vai trò cũ. Không được gỡ Admin của chính mình hoặc Admin cuối cùng.</p>
+@if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+@if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+<p>@Html.ActionLink("Hoạt động kho gần đây", "Activity")</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Tài khoản</th><th>Quyền hiện tại</th><th>Cấp quyền</th></tr></thead><tbody>
+@foreach (var item in Model) {
+    <tr><td>@item.Email</td><td>@item.Roles</td><td>
+    @using (Html.BeginForm("SetRole", "AdminUsers", FormMethod.Post)) {
+        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" />
+        <select name="role" required="required" class="form-select" aria-label="Vai trò cho @item.Email">
+            <option value="">Chọn vai trò mới</option>
+            @foreach (var role in OnlineSalesManagement.Controllers.AdminUsersController.AllowedRoles) { <option value="@role">@role</option> }
+        </select><button class="btn btn-primary btn-sm mt-1" type="submit">Lưu vai trò</button>
+    }
+    </td></tr>
+}
+</tbody></table></div>

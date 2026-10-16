@@ -1,4 +1,4 @@
-﻿@model OnlineSalesManagement.Product
+@model OnlineSalesManagement.Product
 
 @{
     ViewBag.Title = "Delete";
@@ -120,6 +120,7 @@
 
     @using (Html.BeginForm()) {
         @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
 
         <div class="form-actions no-color">
             <input type="submit" value="Delete" class="btn btn-default" /> |
