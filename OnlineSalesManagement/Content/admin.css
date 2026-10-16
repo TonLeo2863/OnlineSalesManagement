@@ -363,3 +363,19 @@ a.sidebar-link.active {
     font-size: 32px;
     margin-bottom: 8px;
 }
+
+/* Dashboard */
+.dashboard-hero { display:flex; flex-wrap:wrap; justify-content:space-between; gap:24px; padding:32px; margin-bottom:24px; border-radius:18px; color:#fff; background:linear-gradient(120deg,#0f172a,#1d4ed8); }
+.dashboard-hero h1 { font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; margin:12px 0; }
+.dashboard-hero p { color:#dbeafe; max-width:620px; }
+.dashboard-eyebrow { font-size:.75rem; letter-spacing:.12em; color:#bfdbfe; }
+.dashboard-date { align-self:flex-start; border:1px solid #ffffff40; border-radius:24px; padding:8px 16px; }
+.dashboard-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:24px; }
+.metric-card { padding:24px; display:flex; flex-direction:column; gap:10px; }
+.metric-card > span { color:var(--text-muted); }
+.metric-card strong { font-size:1.9rem; overflow-wrap:anywhere; }
+.metric-card small { font-size:.8rem; font-weight:400; color:var(--text-muted); }
+.dashboard-panels { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:24px; }
+.dashboard-actions,.dashboard-table { padding:24px; margin-bottom:24px; min-width:0; }
+.dashboard-actions h2,.dashboard-table h2 { font-size:1.15rem; font-weight:700; margin-bottom:16px; }
+@media (max-width:575px) { .dashboard-hero { padding:24px; } .dashboard-table,.dashboard-actions { padding:16px; } }

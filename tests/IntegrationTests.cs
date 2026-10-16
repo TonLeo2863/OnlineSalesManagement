@@ -12,6 +12,9 @@ using OnlineSalesManagement.Models;
 using OnlineSalesManagement.Services;
 using OnlineSalesManagement.ViewModels;
 using System.Web.Mvc;
+using System.Security.Principal;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 
 public static class IntegrationTests
 {
@@ -106,9 +109,64 @@ public static class IntegrationTests
                 try { b.SaveChanges(); throw new Exception("stale write accepted"); }
                 catch (DbUpdateConcurrencyException) { Check(true, "rowversion conflict detected"); }
             }
+            VerifyRolesAndDashboard();
             Console.WriteLine("TOTAL INTEGRATION PASS: " + count);
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
+    }
+    private static void VerifyRolesAndDashboard()
+    {
+        using (var db = new ApplicationDbContext())
+        {
+            var users = new ApplicationUserManager(new UserStore<ApplicationUser>(db));
+            var roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(db));
+            var password = Environment.GetEnvironmentVariable("DACN_UI_TEST_PASSWORD") ?? "TestOnly!" + Guid.NewGuid().ToString("N");
+            foreach (var role in new[] { "Admin", "Kho", "BanHang", "KhachHang" })
+            {
+                var user = new ApplicationUser { UserName = role + "@ui.example.test", Email = role + "@ui.example.test" };
+                var created = IdentityProvisioning.RegisterCustomerAsync(db, users, user, password).GetAwaiter().GetResult();
+                Check(created.Succeeded && users.IsInRole(user.Id, "KhachHang") && !users.IsInRole(user.Id, "Admin"), "registration assigns only KhachHang: " + role);
+                if (role == "Admin")
+                {
+                    Reject(() => IdentityProvisioning.InitializeFirstAdmin(db, user.Id, user.Email, false), "bootstrap requires confirmation");
+                    Reject(() => IdentityProvisioning.InitializeFirstAdmin(db, user.Id, "wrong@example.test", true), "bootstrap verifies target email");
+                    Check(!roleManager.RoleExists("Admin"), "rejected bootstrap did not create Admin role");
+                    IdentityProvisioning.InitializeFirstAdmin(db, user.Id, user.Email, true);
+                    Check(users.IsInRole(user.Id, "Admin"), "confirmed first Admin created");
+                    Reject(() => IdentityProvisioning.InitializeFirstAdmin(db, user.Id, user.Email, true), "bootstrap refuses when Admin already exists");
+                }
+                else if (role != "KhachHang")
+                {
+                    Check(roleManager.Create(new IdentityRole(role)).Succeeded, "create staff role " + role);
+                    Check(users.RemoveFromRole(user.Id, "KhachHang").Succeeded && users.AddToRole(user.Id, role).Succeeded, "assign staff fixture " + role);
+                }
+                var principal = new GenericPrincipal(new GenericIdentity(user.Email, "test"), new[] { role });
+                foreach (var controller in new[] { "AdminUsers", "Products", "Categories", "Customers", "Employees", "Suppliers", "InventoryReports", "PurchaseReceipts", "SalesOrders", "Reports" })
+                {
+                    var expected = role == "Admin" || (role == "Kho" && new[] { "Products", "Categories", "Suppliers", "InventoryReports", "PurchaseReceipts" }.Contains(controller))
+                        || (role == "BanHang" && new[] { "Customers", "SalesOrders" }.Contains(controller));
+                    Check(NavigationAccess.CanAccess(principal, controller) == expected, role + " menu " + controller);
+                }
+                if (role == "KhachHang")
+                {
+                    try { DashboardService.Load(db, principal); throw new Exception("customer read dashboard"); }
+                    catch (UnauthorizedAccessException) { Check(true, "customer denied staff dashboard data"); }
+                }
+                else
+                {
+                    var model = DashboardService.Load(db, principal);
+                    Check(model.CanViewSales == (role != "Kho") && model.CanViewInventory == (role != "BanHang"), role + " dashboard sections");
+                    if (model.CanViewSales)
+                        Check(model.OrderCount == db.SalesOrders.Count() && model.Revenue == (db.SalesOrders.Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Completed).Sum(o => (decimal?)o.TotalAmount) ?? 0m), role + " dashboard matches database sales");
+                    else Check(model.OrderCount == 0 && model.RecentOrders.Count == 0 && model.Revenue == 0m, "Kho has no sales data");
+                    if (model.CanViewInventory)
+                        Check(model.ProductCount == db.Products.Count() && model.StockQuantity == (db.Products.Sum(p => (long?)p.QuantityInStock) ?? 0L), role + " dashboard matches database inventory");
+                    else Check(model.ProductCount == 0 && model.LowStock.Count == 0, "BanHang has no inventory data");
+                }
+            }
+            var guest = new GenericPrincipal(new GenericIdentity(""), new string[0]);
+            Check(!DashboardService.IsStaff(guest) && NavigationAccess.CanAccess(guest, "Home") && NavigationAccess.CanAccess(guest, "Store") && !NavigationAccess.CanAccess(guest, "AdminUsers"), "anonymous access boundaries");
+        }
     }
 }

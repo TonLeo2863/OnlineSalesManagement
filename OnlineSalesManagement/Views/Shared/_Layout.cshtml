@@ -22,10 +22,7 @@
 
     private bool CanAccess(string name)
     {
-        if (name == "Store" || name == "Home") return true;
-        var type = typeof(OnlineSalesManagement.Controllers.HomeController).Assembly.GetType("OnlineSalesManagement.Controllers." + name + "Controller");
-        if (type == null) return false;
-        return type.GetCustomAttributes(typeof(System.Web.Mvc.AuthorizeAttribute), true).Cast<System.Web.Mvc.AuthorizeAttribute>().All(a => User.Identity.IsAuthenticated && (string.IsNullOrEmpty(a.Roles) || a.Roles.Split(',').Any(r => User.IsInRole(r.Trim()))));
+        return OnlineSalesManagement.Services.NavigationAccess.CanAccess(User, name);
     }
 
     private static bool HasController(string name)

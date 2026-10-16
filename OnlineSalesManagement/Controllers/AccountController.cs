@@ -9,6 +9,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using OnlineSalesManagement.Models;
+using OnlineSalesManagement.Services;
 
 namespace OnlineSalesManagement.Controllers
 {
@@ -152,7 +153,8 @@ namespace OnlineSalesManagement.Controllers
             if (ModelState.IsValid)
             {
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user, model.Password);
+                var result = await IdentityProvisioning.RegisterCustomerAsync(
+                    HttpContext.GetOwinContext().Get<ApplicationDbContext>(), UserManager, user, model.Password);
                 if (result.Succeeded)
                 {
                     await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
@@ -368,15 +370,12 @@ namespace OnlineSalesManagement.Controllers
                     return View("ExternalLoginFailure");
                 }
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user);
+                var result = await IdentityProvisioning.RegisterCustomerAsync(
+                    HttpContext.GetOwinContext().Get<ApplicationDbContext>(), UserManager, user, null, info.Login);
                 if (result.Succeeded)
                 {
-                    result = await UserManager.AddLoginAsync(user.Id, info.Login);
-                    if (result.Succeeded)
-                    {
                         await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
                         return RedirectToLocal(returnUrl);
-                    }
                 }
                 AddErrors(result);
             }

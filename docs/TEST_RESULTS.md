@@ -93,3 +93,26 @@ Runner mới tạo bản ghi JSON có hash source, stage lỗi và trạng thái
 - Run-IntegrationTests.ps1: lần trong sandbox thất bại kết nối SQL do SSPI (The target principal name is incorrect); không coi là lỗi logic ứng dụng. Lần chạy lại ngoài sandbox được phê duyệt: exit 0, TOTAL INTEGRATION PASS 28. DB thử Dacn05_Test_3cbfd79b114b43f2badf1f2c6f2e361a được giữ lại; không sửa DB ứng dụng. 133 hash source tiếp tục khớp bản build.
 - Chưa kiểm chứng: HTTP login/logout/cookie/role, CRUD qua request thật, checkout thành công/truy cập đơn chéo owner qua HTTP, Complete qua HTTP/DB, cạnh tranh thực tế, UI/mobile/in A4/tải lớn; chưa chỉ định Admin đầu tiên, render Mermaid hoặc dàn trang DOCX/PPTX. 52 smoke/28 integration không chứng nhận các phần này.
 - Chỉ bàn giao thay đổi đã có; không phát triển tính năng mới, merge master, reset, xóa thay đổi cũ hoặc migration DB thật. Kết quả mới này thay thế trạng thái chưa build/test của các checkpoint lịch sử bên trên, không phải nghiệm thu toàn bộ đồ án.
+## Sửa menu, Dashboard và tiếng Việt — 16/10/2026
+
+Nguyên nhân xác minh trước sửa:
+- DB ứng dụng có 1 user, 0 AspNetRoles, 0 AspNetUserRoles. Register chỉ tạo user rồi sign-in, không có AddToRole; không có Admin đầu tiên. CanAccess ẩn các controller có role là đúng, không phải thiếu Controller/View.
+- Home/Index là template ASP.NET mặc định, HomeController không truy vấn Dashboard.
+- Source UTF-8 strict hợp lệ, Layout chứa đúng Quản lý bán hàng và meta charset=utf-8. GET IIS trước sửa trả text/html; charset=utf-8 nhưng body UTF-8 chứa Quáº£n; Encoding.Default của host là Windows-1252, Web.config chưa có fileEncoding. Sau cấu hình globalization UTF-8, cùng chuỗi Layout trả đúng qua HTTP. Không thay font hoặc chuyển mã hàng loạt.
+
+Thay đổi:
+- NavigationAccess kiểm tra Authorize của controller và Index, gồm Roles/Users/AllowAnonymous; Layout dùng helper chung. Giữ toàn bộ Authorize server.
+- Đăng ký thường và external dùng IdentityProvisioning: tạo user + role KhachHang + membership (và external login nếu có) trong transaction; chỉ sign-in sau commit. Không tự gán Admin, không thay role tài khoản cũ.
+- Initialize-FirstAdmin.ps1 mặc định PREVIEW; Apply cần câu xác nhận chính xác ID/email, kiểm tra lại target và chưa có Admin trong transaction Serializable, cập nhật SecurityStamp. Không có route web bootstrap, mật khẩu mặc định hoặc migration. Preview thực tế đạt, chưa Apply DB ứng dụng vì chưa có xác nhận chọn tài khoản.
+- Dashboard truy vấn số liệu thật: đơn/chờ xác nhận/doanh thu Confirmed+Completed toàn thời gian; tồn và sắp hết. Admin thấy cả hai; Kho chỉ kho; BanHang chỉ bán hàng. KhachHang/anonymous nhận Welcome, không truy vấn số liệu quản trị. Có empty state và liên kết nghiệp vụ đúng quyền.
+- globalization file/request/response/header UTF-8; giữ nguyên các chuỗi tiếng Việt đã đúng. Script PowerShell có tiếng Việt được lưu UTF-8 BOM để Windows PowerShell 5.1 đọc đúng.
+
+Đã kiểm thử thực tế:
+- Rebuild Debug + MvcBuildViews=true và 52 smoke đã đạt. Snapshot cuối được kiểm tra lại bằng Verify-Dacn05.ps1; xem record mới nhất trong artifacts/verification.
+- Integration mở rộng: TOTAL INTEGRATION PASS 92, gồm các ca kho trước đó, đăng ký role KhachHang, bootstrap thiếu xác nhận/sai email/đã có Admin, menu bốn quyền và số liệu Dashboard đối chiếu DB.
+- Run-UiTests.ps1: TOTAL HTTP PASS 122, exit 0 trên IIS Express bản sao và DB Dacn05_Test_8b5508f4cac74fec92b0fb0472178170 (giữ lại). Kiểm tra anonymous home; login/logout của bốn quyền; Dashboard/UTF-8/sidebar; GET trực tiếp 10 controller theo từng quyền; POST AdminUsers/SetRole thiếu token và có token nhưng role INVALID (không cấp quyền qua các POST này); đăng ký HTTP và truy vấn membership chỉ KhachHang.
+- Bằng chứng HTML: artifacts/ui-verification/run-b3f233650d5d473bb65485013f363297 (ignored). Mật khẩu fixture sinh ngẫu nhiên, không commit/log. Harness tự dừng đúng IIS do nó tạo; không drop DB thử hoặc sửa DB ứng dụng.
+- Các lượt HTTP ban đầu dừng vì lỗi harness (HTML entities, tham số string null làm GET thành POST, tên biến HOME reserved); đã sửa và chạy lại toàn bộ 122 ca đạt. Tool preview từng gặp LINQ ArrayIndex, đã sửa dùng biến scalar rồi chạy lại đạt. Không dùng kết quả lỗi làm chứng nhận.
+
+Chưa kiểm chứng trong phạm vi này: external OAuth thực tế (chưa cấu hình provider), lockout/sai mật khẩu, cạnh tranh nhiều request đồng thời/cookie sau thay role, CRUD ghi qua HTTP toàn bộ phân hệ, checkout thành công/owner qua HTTP, Complete qua HTTP/DB, UI desktop/mobile bằng ảnh và in A4/tải lớn. Browser automation không có browser khả dụng. Các kiểm thử POST role ở trên xác minh authorization/anti-forgery/validation, không chứng nhận trọn luồng thay role quản trị. Không merge master, không migration DB thật; Admin đầu tiên trên DB ứng dụng vẫn chờ xác nhận.
+- Snapshot cuối: artifacts/verification/verify-20261016-111304-673.json, Status/Build/Smoke=Passed, SourceStable=true, 52 smoke PASS. Truy vấn cuối DB ứng dụng vẫn 1 user / 0 role / 0 membership, xác nhận không cấp Admin hoặc tạo fixture ở DB thật.

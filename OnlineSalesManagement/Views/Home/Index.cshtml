@@ -1,33 +1,47 @@
-﻿@{
-    ViewBag.Title = "Home Page";
+@model OnlineSalesManagement.ViewModels.DashboardViewModel
+@{ ViewBag.Title = "Tổng quan kinh doanh"; }
+<section class="dashboard-hero"><div><span class="dashboard-eyebrow">KHÔNG GIAN LÀM VIỆC</span><h1>Tổng quan kinh doanh</h1><p>Theo dõi hoạt động và xử lý công việc trong ngày.</p></div><span class="dashboard-date">@DateTime.Now.ToString("dd/MM/yyyy")</span></section>
+<div class="dashboard-metrics">
+@if (Model.CanViewSales) {
+<article class="panel metric-card"><span>Đơn hàng</span><strong>@Model.OrderCount.ToString("N0")</strong><small>Toàn bộ trạng thái</small></article>
+<article class="panel metric-card"><span>Chờ xác nhận</span><strong>@Model.PendingCount.ToString("N0")</strong>@Html.ActionLink("Xử lý đơn hàng →", "Index", "SalesOrders")</article>
+<article class="panel metric-card"><span>Doanh thu ghi nhận</span><strong>@Model.Revenue.ToString("N0") đ</strong><small>Đơn đã xác nhận / hoàn tất, toàn thời gian; không phải tiền đã thu</small></article>
 }
-
-<main>
-    <section class="row" aria-labelledby="aspnetTitle">
-        <h1 id="title">ASP.NET</h1>
-        <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-        <p><a href="https://asp.net" class="btn btn-primary btn-md">Learn more &raquo;</a></p>
-    </section>
-
-    <div class="row">
-        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
-            <h2 id="gettingStartedTitle">Getting started</h2>
-            <p>
-                ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-                enables a clean separation of concerns and gives you full control over markup
-                for enjoyable, agile development.
-            </p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="librariesTitle">
-            <h2 id="librariesTitle">Get more libraries</h2>
-            <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="hostingTitle">
-            <h2 id="hostingTitle">Web Hosting</h2>
-            <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-        </section>
-    </div>
-</main>
+@if (Model.CanViewInventory) {
+<article class="panel metric-card"><span>Sản phẩm</span><strong>@Model.ProductCount.ToString("N0")</strong>@Html.ActionLink("Quản lý sản phẩm →", "Index", "Products")</article>
+<article class="panel metric-card"><span>Tổng số lượng tồn</span><strong>@Model.StockQuantity.ToString("N0")</strong><small>Cộng số lượng mọi sản phẩm; có thể khác đơn vị</small></article>
+<article class="panel metric-card"><span>Sản phẩm sắp hết</span><strong>@Model.LowStockCount.ToString("N0")</strong><small>Đang hoạt động, tồn ≤ mức đặt lại</small></article>
+}
+</div>
+<section class="panel dashboard-actions"><h2>Nghiệp vụ nhanh</h2><div class="d-flex flex-wrap gap-2">
+@if (Model.CanViewSales) {
+@Html.ActionLink("Đơn hàng", "Index", "SalesOrders", null, new { @class = "btn btn-primary" })
+@Html.ActionLink("Khách hàng", "Index", "Customers", null, new { @class = "btn btn-outline-primary" })
+}
+@if (Model.CanViewInventory) {
+@Html.ActionLink("Nhập kho", "Index", "PurchaseReceipts", null, new { @class = "btn btn-primary" })
+@Html.ActionLink("Đối chiếu tồn kho", "Index", "InventoryReports", null, new { @class = "btn btn-outline-primary" })
+}
+@if (User.IsInRole("Admin")) {
+@Html.ActionLink("Báo cáo", "Index", "Reports", null, new { @class = "btn btn-outline-primary" })
+@Html.ActionLink("Người dùng và vai trò", "Index", "AdminUsers", null, new { @class = "btn btn-outline-primary" })
+}
+</div></section>
+<div class="dashboard-panels">
+@if (Model.CanViewSales) {
+<section class="panel dashboard-table"><h2>Đơn hàng gần nhất</h2>
+@if (Model.RecentOrders.Count == 0) { <p class="text-muted">Chưa có đơn hàng.</p> }
+else { <div class="table-responsive"><table class="table data-table"><thead><tr><th>Đơn hàng</th><th>Trạng thái</th><th>Tổng tiền</th></tr></thead><tbody>
+@foreach (var order in Model.RecentOrders) { <tr><td>@Html.ActionLink(order.Number, "Details", "SalesOrders", new { id = order.Id }, null)</td><td>@Html.DisplayFor(m => order.Status)</td><td>@order.Total.ToString("N0") đ</td></tr> }
+</tbody></table></div> }
+</section>
+}
+@if (Model.CanViewInventory) {
+<section class="panel dashboard-table"><h2>Cần bổ sung hàng</h2><p class="text-muted">Tối đa 6 sản phẩm có tồn thấp nhất.</p>
+@if (Model.LowStock.Count == 0) { <p class="text-muted">Không có sản phẩm dưới mức đặt lại.</p> }
+else { <div class="table-responsive"><table class="table data-table"><thead><tr><th>Sản phẩm</th><th>Tồn</th><th>Mức đặt lại</th></tr></thead><tbody>
+@foreach (var product in Model.LowStock) { <tr><td>@Html.ActionLink(product.Name, "Details", "Products", new { id = product.Id }, null)<div class="cell-sub">@product.Sku</div></td><td>@product.Quantity.ToString("N0")</td><td>@product.ReorderLevel.ToString("N0")</td></tr> }
+</tbody></table></div> }
+</section>
+}
+</div>

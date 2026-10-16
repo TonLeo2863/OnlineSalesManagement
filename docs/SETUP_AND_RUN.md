@@ -73,3 +73,33 @@ Sau khi môi trường thực thi và ghi workspace hoạt động, trong Develo
 Không cần chạy cả hai nếu đã chọn chạy trực tiếp bản có integration. Runner không thay đổi ExecutionPolicy; dùng môi trường được phép chạy script theo chính sách máy hiện có. Nếu bị chặn, ghi lỗi và xử lý theo chính sách quản trị, không tự thay bảo mật Windows.
 
 Runner Rebuild Debug/Razor trước test; dừng ngay khi build thất bại để tránh chạy DLL cũ. Integration tạo DB mới Dacn05_Test_<GUID>, chỉ chạy migration Up trên DB thử tách biệt và giữ DB lại. Không sửa/drop DB thật. Kết quả/hash source lưu artifacts/verification/*.json, thư mục bị ignore; giữ log locally làm bằng chứng. Runner chưa chạy trong lượt công cụ exec bị lỗi; không coi file script là kết quả kiểm thử.
+
+## Menu, Dashboard và UTF-8 — bản sửa 16/10/2026
+
+Menu đọc cùng các điều kiện Authorize của Controller và action Index qua NavigationAccess; không thay thế phân quyền server. Admin có toàn bộ menu; Kho có sản phẩm/danh mục/NCC/nhập/tồn; BanHang có khách hàng/đơn hàng; KhachHang và tài khoản cũ chưa có role chỉ có mua hàng/tổng quan. Đăng ký thường và đăng ký ngoài gán KhachHang trong cùng transaction tạo user; không cấp Admin từ form đăng ký.
+
+Dashboard Admin hiển thị bán hàng và kho; Kho chỉ có kho; BanHang chỉ có bán hàng. Khách/anonymous nhận Welcome trước khi truy vấn dữ liệu quản trị. Doanh thu là tổng TotalAmount của đơn Confirmed/Completed toàn thời gian theo trạng thái hiện tại, không phải tiền đã thu. Tổng tồn cộng số lượng mọi sản phẩm (có thể khác đơn vị); sắp hết là sản phẩm active có tồn <= ReorderLevel. Không hardcode số liệu.
+
+Khởi tạo Admin đầu tiên chỉ dành cho người vận hành có quyền chạy công cụ cục bộ và kết nối DB. Không có URL bootstrap, mật khẩu mặc định hay tự chọn tài khoản đầu tiên. Chạy preview trước, thay đúng ID/email đã được người quản trị xác nhận:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/Initialize-FirstAdmin.ps1 -UserId '<ID-da-xac-nhan>' -Email '<email-da-xac-nhan>'
+# Chỉ sau khi kiểm tra target/database và nhận xác nhận của người quản trị:
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/Initialize-FirstAdmin.ps1 -UserId '<ID-da-xac-nhan>' -Email '<email-da-xac-nhan>' -Apply
+~~~
+
+- Preview không ghi DB. Apply còn yêu cầu nhập đúng câu GRANT ADMIN <ID> <email>; nhập khác sẽ dừng.
+- Kiểm tra lại ID/email và không có membership Admin trong transaction Serializable; nếu đã có Admin, dùng AdminUsers thay vì chạy bootstrap lần nữa.
+- Chỉ thêm Admin cho đúng tài khoản, cập nhật SecurityStamp, không tạo user/mật khẩu, không sửa migration. Đăng xuất/đăng nhập lại sau khi cấp quyền.
+- Tài khoản có trước bản sửa không được tự động nâng quyền hoặc gán role hàng loạt. Chưa thực hiện Apply trên DB ứng dụng khi chưa được xác nhận cụ thể.
+
+Web.config khai báo globalization fileEncoding/requestEncoding/responseEncoding/responseHeaderEncoding = utf-8. Giữ meta charset=utf-8. File nguồn đã đúng UTF-8, không chuyển lại từ chuỗi mojibake hay đổi font. Host hiện có Encoding.Default Windows-1252; view UTF-8 không BOM từng bị đọc theo encoding host rồi xuất ra response UTF-8. HTTP trước sửa đã có charset=utf-8 nhưng bytes chứa Quáº£n; sau khai báo fileEncoding đúng, cùng chữ trong Layout hiển thị đúng.
+
+Kiểm thử riêng website/DB thử (cần MSBuild, SQL Windows Authentication và IIS Express):
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/Verify-Dacn05.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/Run-UiTests.ps1
+~~~
+
+Run-UiTests tạo DB Dacn05_Test_<GUID> mới qua runner integration, tạo tài khoản thử cho bốn quyền, sao chép website vào artifacts/ui-verification/run-<GUID>/site, thay connection string chỉ trong bản sao rồi chạy IIS Express localhost:64265. Mật khẩu thử ngẫu nhiên chỉ tồn tại trong tiến trình, không đưa vào source/log; DB thử được giữ lại, IIS do script tạo được dừng trong finally. Không chạy đồng thời nhiều harness cùng port hoặc rebuild khi harness đang sao chép/chạy. HTML bằng chứng nằm trong artifacts (ignored); không dùng các tài khoản thử trên DB thật.
