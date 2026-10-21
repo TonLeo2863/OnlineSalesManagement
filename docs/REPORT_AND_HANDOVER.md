@@ -1,8 +1,10 @@
 # Nội dung báo cáo và bàn giao
 
+Thông tin xác nhận: HUIT, mã CNTT_DACN_05, đề tài Xây dựng hệ thống bán hàng trực tuyến, GVHD **Bùi Công Danh**, hạn nộp sáng 22/10/2026. Sinh viên/MSSV/lớp chờ điền bằng thông tin thật. Trạng thái và checklist PC hiện tại xem [HANDOVER_20261021.md](HANDOVER_20261021.md); số liệu kiểm thử dùng mục 21/10 trong TEST_RESULTS.md. Chưa có PDF ký, backup hay gói `CNTT_DACN_05_BuiCongDanh.zip` trong phiên này.
+
 ## Cấu trúc chuyển sang Word
 
-Bìa: HUIT — Khoa Công nghệ thông tin; đồ án chuyên ngành CNTT_DACN_05; đề tài Xây dựng hệ thống bán hàng trực tuyến; sinh viên/MSSV/lớp/giảng viên/thời gian để trống cho người thực hiện điền. Tiếp theo: lời cảm ơn, cam đoan, nhận xét, mục lục, danh mục hình/bảng và từ viết tắt theo mẫu khoa. Không tự tạo chữ ký hoặc nhận xét giảng viên.
+Bìa: HUIT — Khoa Công nghệ thông tin; đồ án chuyên ngành CNTT_DACN_05; đề tài Xây dựng hệ thống bán hàng trực tuyến; GVHD Bùi Công Danh; sinh viên/MSSV/lớp/thời gian để trống cho người thực hiện điền. Tiếp theo: lời cảm ơn, cam đoan, nhận xét, mục lục, danh mục hình/bảng và từ viết tắt theo mẫu khoa. Không tự tạo chữ ký hoặc nhận xét giảng viên.
 
 Chương 1 — Tổng quan: nêu nhu cầu quản lý bán hàng đa kênh, mục tiêu thống nhất danh mục/đơn/tồn và lưu lịch sử; xác định phạm vi một kho, kênh Counter/Online, vai trò Admin/Kho/BanHang/khách. Ghi rõ doanh nghiệp giả định và chưa khảo sát thực tế.
 

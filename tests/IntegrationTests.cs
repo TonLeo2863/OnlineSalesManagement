@@ -109,11 +109,53 @@ public static class IntegrationTests
                 try { b.SaveChanges(); throw new Exception("stale write accepted"); }
                 catch (DbUpdateConcurrencyException) { Check(true, "rowversion conflict detected"); }
             }
+            VerifyThreeProductOrder(productId, product2Id, customerId, employeeId, supplierId);
             VerifyRolesAndDashboard();
             Console.WriteLine("TOTAL INTEGRATION PASS: " + count);
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
+    }
+    private static void VerifyThreeProductOrder(int first, int second, int customer, int employee, int supplier)
+    {
+        int third;
+        using (var db = new ApplicationDbContext()) {
+            var product = new Product { Sku = "IT-03", Name = "Third demo product", CategoryId = db.Products.Find(first).CategoryId, SalePrice = 300m };
+            db.Products.Add(product); db.SaveChanges(); third = product.Id;
+        }
+        var ids = new[] { first, second, third };
+        var receipts = new PurchaseReceiptService();
+        int receipt = receipts.CreateDraft(new PurchaseReceiptDraftInput {
+            ReceiptNumber = "IT-THREE-IN", SupplierId = supplier, EmployeeId = employee,
+            Details = ids.Select(id => new PurchaseReceiptLineInput { ProductId = id, Quantity = 10, UnitCost = 50m }).ToList()
+        });
+        receipts.ConfirmReceipt(receipt, "integration-test");
+        Check(ids.All(id => Stock(id) == 10), "three-product receipt stock");
+        var sales = new SalesOrderService();
+        int order = sales.CreatePending(new SalesOrderPendingInput {
+            OrderNumber = "IT-THREE-OUT", CustomerId = customer, Channel = SalesChannel.Online,
+            ShippingAddress = "Isolated test address", PaymentMethod = PaymentMethod.CashOnDelivery,
+            Details = ids.Select(id => new SalesOrderLineInput { ProductId = id, Quantity = 2 }).ToList()
+        });
+        using (var db = new ApplicationDbContext()) {
+            Check(db.SalesOrders.Find(order).Status == OrderStatus.Pending && db.SalesOrderDetails.Count(d => d.SalesOrderId == order) == 3,
+                "one Pending order contains three different products at service layer");
+        }
+        Check(ids.All(id => Stock(id) == 10), "three-product Pending preserves stock");
+        sales.ConfirmOrder(order, "integration-test");
+        Reject(() => sales.ConfirmOrder(order, "integration-test"), "three-product duplicate confirmation rejected");
+        Check(ids.All(id => Stock(id) == 8), "three-product confirmation subtracts once");
+        using (var reports = new ReportsController()) {
+            var model = (BusinessReportViewModel)((ViewResult)reports.Sales(DateTime.Today, DateTime.Today)).Model;
+            Check(model.Rows.Count(r => r.DocumentId == order) == 3 && model.Rows.Where(r => r.DocumentId == order).Sum(r => r.Quantity) == 6,
+                "three-product sale appears in export report");
+        }
+        sales.CompleteOrder(order);
+        Check(ids.All(id => Stock(id) == 8), "Complete preserves stock for all three products");
+        Reject(() => sales.CancelOrder(order, "integration-test"), "Completed order cannot be cancelled");
+        using (var controller = new SalesOrdersController()) {
+            Check(controller.Invoice(order) is ViewResult, "Completed invoice returns view model (not A4 rendering)");
+        }
     }
     private static void VerifyRolesAndDashboard()
     {

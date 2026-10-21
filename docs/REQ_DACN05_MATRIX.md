@@ -1,5 +1,7 @@
 # Ma trận CNTT_DACN_05 — trạng thái hiện tại
 
+**Rà soát mới 21/10/2026:** xem [HANDOVER_20261021.md](HANDOVER_20261021.md) để có bảng từng tiêu chí, P0/P1/P2 và database PC hiện tại. Những số liệu/checkpoint bên dưới thuộc phiên 16/10; không dùng thay cho kết quả mới trong TEST_RESULTS.md. Hiện 52 smoke / 101 integration / 144 HTTP / 24 browser PASS; C/R/U bốn đối tượng và PDF A4 mẫu đã kiểm chứng. Giỏ UI ba sản phẩm, thông báo, Admin demo, backup và PDF ký chưa nghiệm thu.
+
 Mốc xác minh mới: sửa menu/Dashboard/UTF-8 ngày 16/10/2026. Build Debug + Razor, 52 smoke, 92 integration và 122 HTTP đạt trên DB thử riêng. DB ứng dụng chỉ đọc/preview, chưa cấp Admin khi chưa nhận xác nhận. Có source và test theo phạm vi không đồng nghĩa nghiệm thu toàn bộ đồ án; xem mục mới nhất trong TEST_RESULTS.md.
 
 | Tiêu chí | Source chính | Trạng thái và bằng chứng | Cần làm để nghiệm thu |

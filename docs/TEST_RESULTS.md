@@ -1,5 +1,59 @@
 # Kết quả và kịch bản kiểm thử
 
+## Hoàn thiện bàn giao — lượt mới nhất 21/10/2026
+
+Đối chiếu `git ls-remote origin`: nhánh `codex/dacn05-completion` vẫn ở 58b2d5183847583dae5f9b44f00be1727f2a1958. Tests/tài liệu bổ sung chưa commit, logic ứng dụng giữ nguyên. Database thật vẫn chỉ đọc.
+
+| Kiểm tra | Kết quả | Bằng chứng / giới hạn |
+|---|---|---|
+| Rebuild Debug + Razor, smoke, integration cuối worktree | PASS: 52 smoke / 101 integration | artifacts/verification/verify-20261021-164422-863.json; SourceStable=true |
+| HTTP xác thực/quyền/COD/owner/Confirm/Complete/hóa đơn/báo cáo | PASS 144 | artifacts/handover-browser-a4.log; toàn bộ chạy lại trong lượt mới |
+| Chrome form Admin, tạo/đọc/sửa sản phẩm/khách/nhân viên/NCC | PASS | tests/Browser-Handover.mjs; 24 browser checks tổng cộng gồm phần in; kiểm danh sách sau redirect và sau sửa |
+| Form sản phẩm không sửa tồn | PASS | Chrome kiểm tra không có input QuantityInStock |
+| Xóa dữ liệu qua UI | CHƯA KIỂM THỬ | Không xóa fixture hoặc dữ liệu thật trong lượt này |
+| PDF hóa đơn/doanh thu/tồn | PASS A4 dọc | PDF MediaBox; ảnh print media đã xem |
+| PDF báo cáo nhập/xuất | PASS A4 ngang | CSS source thiết kế landscape; PDF MediaBox đúng |
+| Hình ảnh chế độ in | PASS với dữ liệu thử | Đã xem 5 ảnh: bảng/tổng đọc được, không thấy chồng chữ hoặc cắt cột; enum có nơi còn tiếng Anh |
+| Máy in vật lý, từng trang PDF qua renderer độc lập, chứng từ cực dài | CHƯA KIỂM THỬ | Không suy diễn từ xuất PDF thành đã in máy thật |
+| Giỏ UI ba sản phẩm / thông báo | CHƯA KIỂM THỬ, chưa tìm thấy source | Không có stash/unreachable object hoặc file Cart/Notification/GioHang trong Git tìm được; không suy diễn từ service ba dòng thành giỏ UI |
+| Admin database demo | CHƯA ĐẠT điều kiện demo | OnlineSalesDb có 0 user / 0 role; không cấp quyền khi chưa có xác nhận |
+| Backup / VERIFYONLY / restore thử / PDF ký | CHƯA KIỂM THỬ hoặc chưa có | Người vận hành thực hiện theo DATABASE_OPERATOR_CHECKLIST.md |
+
+Lượt browser thành công dùng DB riêng `Dacn05_Test_e7faacc84c3c47d38949ff704e83eac7`; artifacts/ui-verification/run-5fd81062d7df4aa8b5899734ec98934d/browser/ chứa browser-result.json, ảnh CRUD, invoice-a4.pdf, revenue-a4.pdf, purchases-a4.pdf, sales-a4.pdf, inventory-a4.pdf và ảnh print. Database được giữ lại; không drop/migrate DB thật.
+
+Hai lượt browser trước FAIL do harness: chọn form POST đầu trang (logout) thay vì form đang điền; sau đó yêu cầu A4 dọc cho báo cáo đã thiết kế A4 ngang. Log được giữ ở artifacts/handover-browser-final.log và handover-browser-retry.log. Đã sửa harness và chạy lại toàn bộ đạt 24; không đổi logic app. Các FAIL này không bị ghi thành PASS của lượt đầu.
+
+Đóng gói: tests/Export-HandoverSource.ps1 tạo source draft và manifest SHA256 theo allowlist, kiểm từng entry ZIP, loại runtime/config fixture/profile browser. Web.config trong gói dùng template SQL Windows Authentication; dữ liệu/mật khẩu không được mang từ DB thử. Source draft chưa chứa PDF báo cáo ký hoặc backup. Kiểm chứng trên source đóng gói được ghi ở FINAL_SNAPSHOT_VALIDATION.md sau khi thực hiện; không tự coi restore NuGet/DB trên máy sạch đã đạt.
+
+Các mục dưới là lịch sử các lượt trước trong ngày và phiên 16/10.
+
+## Phiên PC MAY042 — 21/10/2026
+
+Snapshot: worktree `.handover-worktree`, nhánh `codex/dacn05-completion`, HEAD nền 58b2d51; Web.config dùng SQL cục bộ. Thay đổi phiên này: mở rộng kiểm thử và tài liệu bàn giao; chưa sửa logic ứng dụng.
+
+| Hạng mục | Kết quả thật |
+|---|---|
+| Master tại thư mục gốc, Build Debug + Razor | PASS, nhưng không dùng để chứng nhận nhánh phát triển |
+| Nhánh phát triển, Rebuild Debug + Razor | PASS |
+| Smoke | PASS 52 |
+| Integration nền | PASS 92, DB riêng Dacn05_Test_c86e0f279912485b94e1eb012d3d0dd6 |
+| HTTP nền | PASS 122 trên bản sao IIS Express và cùng DB thử; artifacts/ui-verification/run-a0c174768e7d43b7ac61bb9775c038f4 |
+| HTTP mở rộng cuối phiên | PASS 144 tổng cộng, gồm checkout COD một sản phẩm → Pending → Admin xác nhận → trừ tồn một lần → khách xem trạng thái → hóa đơn/báo cáo → Complete không trừ thêm; chặn replay và owner khác |
+| Integration bổ sung ba sản phẩm ở service | PASS 101 tổng cộng; DB riêng Dacn05_Test_218103954dde42a38ad1497a14c00c59 |
+| Một Pending ba dòng → xác nhận lặp → trừ đúng một lần → báo cáo xuất → Complete → chặn hủy Completed | PASS tại service; trả ViewResult hóa đơn PASS; không phải kiểm thử giỏ hàng hay in A4 |
+| Database gốc | Chỉ đọc: 5 đơn, 16 ledger, 0 user/role, 0 sản phẩm lệch tồn; không ghi/migrate/cấp Admin |
+| CRUD ghi toàn bộ qua HTTP, giỏ hàng ba sản phẩm, thông báo, A4 trực quan, PDF ký/backup/zip | NOT TESTED / chưa có đủ artifact |
+
+Record Rebuild/smoke: artifacts/verification/verify-20261021-161206-133.json (SourceStable=true). HTTP cuối phiên: artifacts/http-handover-retry-20261021.log; HTML artifacts/ui-verification/run-57c222516bce41958722c9b3efa2eafe; DB Dacn05_Test_327efecdc13e4d00915f62f8815a3c49 (giữ lại). Trong cùng lượt HTTP, integration 101 PASS trước khi chạy IIS. Các artifact bị Git ignore, giữ trên máy để đối chiếu. Không drop các DB thử.
+
+Kiểm tra cuối sau khi mở rộng test: artifacts/verification/verify-20261021-161958-092.json — Status/Build/Smoke/Integration=Passed, SourceStable=true; 52 smoke và 101 integration. Log artifacts/final-verification-20261021.log. git diff --check PASS. Truy vấn DB gốc cuối phiên vẫn 0 user / 0 role / 5 đơn / 16 ledger. HTML lưu thực tế hiển thị trạng thái Pending rồi Confirmed; giao diện enum chưa bản địa hóa đầy đủ. Source ứng dụng không thay đổi sau lượt HTTP 144 PASS; lần Rebuild cuối kiểm tra cùng hash source hiện tại.
+
+Lượt mở rộng đầu tiên FAIL ở assertion nhãn Pending tiếng Việt sau khi đặt COD; không coi là hoàn tất kiểm thử. Đã chỉnh assertion cho tên enum/DisplayName và lưu HTML Pending/Confirmed, chạy lại toàn bộ đạt 144; xem log lỗi artifacts/http-handover-20261021.log và HTML lượt thành công. Không sửa logic ứng dụng để làm test đạt. Chưa khẳng định giao diện đã bản địa hóa đầy đủ.
+
+Lỗi thao tác đã xử lý: Git không nằm trên PATH (dùng Git kèm VS); switch bị chặn để bảo toàn Web.config (dùng worktree riêng); PowerShell chặn script (chạy tiến trình con với ExecutionPolicy Bypass, không thay policy máy). Không phải lỗi ứng dụng.
+
+Các mục bên dưới là lịch sử phiên cũ, không thay thế kết quả hiện tại. Xem [HANDOVER_20261021.md](HANDOVER_20261021.md) cho phân loại và điều kiện bàn giao.
+
 ## Đã thực thi 16/10/2026
 
 - `git status --short`: sạch trước khi làm; nhánh ban đầu codex-fixes.

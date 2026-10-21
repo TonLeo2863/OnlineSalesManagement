@@ -1,5 +1,16 @@
 # Cài đặt và chạy
 
+## Cập nhật PC MAY042 ngày 21/10/2026 — ưu tiên hơn ghi chú cũ bên dưới
+
+- Mở `.handover-worktree/OnlineSalesManagement.sln` để chạy nhánh `codex/dacn05-completion`; solution thư mục gốc vẫn ở master, Web.config sửa cục bộ được giữ nguyên.
+- SQL `MAY042\SQLEXPRESS` kết nối thành công; `OnlineSalesDb` đã tồn tại với 5 đơn/16 giao dịch và hai migration khớp tên source. Không chạy script khởi tạo/migration/seed trên DB gốc trong phiên này.
+- Đã có Store, AdminUsers và bootstrap Admin cục bộ. Bốn role Admin/Kho/BanHang/KhachHang được kiểm thử trên DB thử; DB gốc hiện không có user. Đăng ký tài khoản rồi xác minh ID/email trước preview/Apply Admin. Không tự chọn tài khoản hoặc cấp quyền.
+- Rebuild Debug/Razor và 52 smoke PASS. Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tests/Verify-Dacn05.ps1` từ worktree; integration/HTTP chỉ dùng DB GUID riêng theo runner đã rà.
+- Báo cáo nhập/xuất đã dùng TransactionDate/giá snapshot và được integration kiểm tra. Checkout hiện chỉ một sản phẩm; không có bằng chứng giỏ nhiều sản phẩm/thông báo trong snapshot này.
+- Xem [HANDOVER_20261021.md](HANDOVER_20261021.md) và TEST_RESULTS.md. Các mục dưới chứa ghi chú lịch sử có thể không còn đúng (chưa có UI/role, lỗi sandbox, đường dẫn test); dùng lệnh và trạng thái cập nhật ở mục này.
+- Lượt hoàn thiện: Chrome C/R/U bốn đối tượng và xuất PDF A4 mẫu đạt 24 browser checks; chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tests/Run-UiTests.ps1 -IncludeBrowser` sau Rebuild. Harness cần Chrome, Node.js (WebSocket/fetch), IIS Express và SQL Windows Authentication; tạo DB GUID riêng và giữ lại.
+- Xem [NUGET_PACKAGES.md](NUGET_PACKAGES.md) và [DATABASE_OPERATOR_CHECKLIST.md](DATABASE_OPERATOR_CHECKLIST.md). Source draft dùng `.\SQLEXPRESS`; chỉnh instance/catalog trên máy nhận trước chạy demo. Không dùng fixture Admin làm tài khoản demo và không chạy seed/migration lên DB đã phục hồi.
+
 ## Môi trường đã phát hiện
 
 Windows; Visual Studio 2022 Community; MSBuild tại `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe`; có dotnet và sqlcmd. SQL Server instance SQLEXPRESS đang Running (chưa xác minh phiên bản và database dự án).

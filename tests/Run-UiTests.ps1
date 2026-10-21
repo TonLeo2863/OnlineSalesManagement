@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([int]$Port = 64265)
+param([int]$Port = 64265, [switch]$IncludeBrowser)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $work = Join-Path $root ('artifacts\ui-verification\run-' + [Guid]::NewGuid().ToString('N'))
@@ -7,6 +7,7 @@ $site = Join-Path $work 'site'
 [void][IO.Directory]::CreateDirectory($site)
 $env:DACN_UI_TEST_PASSWORD = 'UiTest!9-' + [Guid]::NewGuid().ToString('N')
 $iis = $null
+$chrome = $null
 $count = 0
 function Check([bool]$ok, [string]$message) {
     if (!$ok) { throw ('FAIL: ' + $message) }
@@ -107,10 +108,88 @@ try {
         $reader = $command.ExecuteReader(); $roles = @(); while ($reader.Read()) { $roles += $reader.GetString(0) }
         Check ($roles.Count -eq 1 -and $roles[0] -eq 'KhachHang') 'HTTP registration persisted only KhachHang role'
     } finally { $sql.Dispose() }
+    # All writes below remain on the guarded Dacn05_Test_ fixture.
+    $sql = New-Object Data.SqlClient.SqlConnection($builder.ConnectionString)
+    try {
+        $sql.Open()
+        $command = $sql.CreateCommand(); $command.CommandText = "SELECT Id FROM Products WHERE Sku='IT-03'"
+        $productId = [int]$command.ExecuteScalar()
+        $command.CommandText = "SELECT QuantityInStock FROM Products WHERE Id=$productId"
+        $stockBefore = [int]$command.ExecuteScalar()
+        $checkout = RequestPage ("/Store/Checkout/$productId") $registeredCookies
+        Check ($checkout.Status -eq 200) 'customer checkout renders'
+        $orderTokenMatch = [regex]::Match($checkout.Body, '<input[^>]*name="Token"[^>]*value="([^"]+)"')
+        Check ($orderTokenMatch.Success) 'checkout provides replay token'
+        $checkoutForm = FormData @{ __RequestVerificationToken=(Token $checkout.Body); Token=$orderTokenMatch.Groups[1].Value; ProductId=$productId; Quantity=1; FullName='HTTP Customer'; PhoneNumber='0901234567'; ShippingAddress='Isolated test address' }
+        $placed = RequestPage '/Store/Checkout' $registeredCookies $checkoutForm
+        Check ($placed.Status -eq 302 -and $placed.Location -match '/Store/Details/\d+') 'COD checkout redirects to own order'
+        $orderId = [int]([regex]::Match($placed.Location, '/Store/Details/(\d+)').Groups[1].Value)
+        $command.CommandText = "SELECT COUNT(*) FROM SalesOrders WHERE Id=$orderId AND Status=0 AND PaymentMethod=2"
+        Check ([int]$command.ExecuteScalar() -eq 1) 'COD order persists Pending'
+        $command.CommandText = "SELECT QuantityInStock FROM Products WHERE Id=$productId"
+        Check ([int]$command.ExecuteScalar() -eq $stockBefore) 'HTTP checkout does not subtract stock'
+        $pendingPage = RequestPage $placed.Location $registeredCookies
+        [IO.File]::WriteAllText((Join-Path $work 'customer-pending.html'), $pendingPage.RawBody, (New-Object Text.UTF8Encoding($false)))
+        Check ($pendingPage.Status -eq 200 -and $pendingPage.Body.Contains('Third demo product') -and ($pendingPage.Body.Contains('Chờ xác nhận') -or $pendingPage.Body.Contains('Pending'))) 'customer sees own Pending order'
+        $replay = RequestPage '/Store/Checkout' $registeredCookies $checkoutForm
+        Check ($replay.Status -eq 400) 'checkout replay rejected'
+        $otherCookies = New-Object Net.CookieContainer
+        $login = RequestPage '/Account/Login' $otherCookies
+        $otherLogin = RequestPage '/Account/Login' $otherCookies (FormData @{ __RequestVerificationToken=(Token $login.Body); Email='KhachHang@ui.example.test'; Password=$env:DACN_UI_TEST_PASSWORD })
+        Check ($otherLogin.Status -eq 302) 'second customer login for ownership test'
+        Check ((RequestPage $placed.Location $otherCookies).Status -eq 404) 'other customer cannot read order'
+        $adminCookies = New-Object Net.CookieContainer
+        $login = RequestPage '/Account/Login' $adminCookies
+        $adminLogin = RequestPage '/Account/Login' $adminCookies (FormData @{ __RequestVerificationToken=(Token $login.Body); Email='Admin@ui.example.test'; Password=$env:DACN_UI_TEST_PASSWORD })
+        Check ($adminLogin.Status -eq 302) 'Admin login for order confirmation'
+        $adminOrder = RequestPage ("/SalesOrders/Details/$orderId") $adminCookies
+        $confirmData = FormData @{ __RequestVerificationToken=(Token $adminOrder.Body); id=$orderId }
+        Check ((RequestPage '/SalesOrders/Confirm' $adminCookies $confirmData).Status -eq 302) 'Admin confirms online order'
+        Check ((RequestPage '/SalesOrders/Confirm' $adminCookies $confirmData).Status -eq 302) 'duplicate confirmation handled without HTTP crash'
+        $command.CommandText = "SELECT QuantityInStock FROM Products WHERE Id=$productId"
+        Check ([int]$command.ExecuteScalar() -eq ($stockBefore-1)) 'HTTP confirmation subtracts stock exactly once'
+        $command.CommandText = "SELECT COUNT(*) FROM InventoryTransactions WHERE SalesOrderId=$orderId AND QuantityChange=-1"
+        Check ([int]$command.ExecuteScalar() -eq 1) 'HTTP confirmation writes one ledger entry'
+        $confirmedPage = RequestPage $placed.Location $registeredCookies
+        [IO.File]::WriteAllText((Join-Path $work 'customer-confirmed.html'), $confirmedPage.RawBody, (New-Object Text.UTF8Encoding($false)))
+        Check ($confirmedPage.Status -eq 200 -and ($confirmedPage.Body.Contains('Đã xác nhận') -or $confirmedPage.Body.Contains('Confirmed'))) 'customer page reflects changed order status'
+        Check ((RequestPage ("/SalesOrders/Invoice/$orderId") $adminCookies).Status -eq 200) 'confirmed invoice renders over HTTP'
+        foreach ($path in @('/Reports','/Reports/Purchases','/Reports/Sales','/InventoryReports')) {
+            Check ((RequestPage $path $adminCookies).Status -eq 200) ('post-confirmation report renders ' + $path)
+        }
+        $completePage = RequestPage ("/SalesOrders/Details/$orderId") $adminCookies
+        Check ((RequestPage '/SalesOrders/Complete' $adminCookies (FormData @{ __RequestVerificationToken=(Token $completePage.Body); id=$orderId })).Status -eq 302) 'Admin completes confirmed order'
+        $command.CommandText = "SELECT QuantityInStock FROM Products WHERE Id=$productId"
+        Check ([int]$command.ExecuteScalar() -eq ($stockBefore-1)) 'HTTP Complete does not subtract stock again'
+    } finally { $sql.Dispose() }
+    if ($IncludeBrowser) {
+        $chromePath = Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'
+        if (!(Test-Path -LiteralPath $chromePath)) { throw 'Chrome unavailable; browser/print checks NOT TESTED' }
+        $listener = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, 0)
+        $listener.Start(); $debugPort = $listener.LocalEndpoint.Port; $listener.Stop()
+        $browserOutput = Join-Path $work 'browser'
+        [void][IO.Directory]::CreateDirectory($browserOutput)
+        $env:DACN_BROWSER_BASE = "http://localhost:$Port"
+        $env:DACN_BROWSER_OUTPUT = $browserOutput
+        $env:DACN_BROWSER_DATABASE = $builder.InitialCatalog
+        $env:DACN_BROWSER_PORT = [string]$debugPort
+        $env:DACN_BROWSER_ORDER = [string]$orderId
+        $profile = Join-Path $work 'chrome-profile'
+        $chrome = Start-Process -FilePath $chromePath -ArgumentList '--headless=new','--disable-gpu','--no-first-run',('--remote-debugging-port=' + $debugPort),('--user-data-dir="' + $profile + '"'),'about:blank' -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $work 'chrome.log') -RedirectStandardError (Join-Path $work 'chrome-error.log')
+        $ready = $false
+        for ($attempt=0; $attempt -lt 30; $attempt++) {
+            try { $null = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$debugPort/json/version"; $ready=$true; break } catch { Start-Sleep -Milliseconds 200 }
+        }
+        if (!$ready) { throw 'Chrome DevTools did not start' }
+        & node (Join-Path $PSScriptRoot 'Browser-Handover.mjs')
+        if ($LASTEXITCODE -ne 0) { throw 'Browser handover checks failed; evidence retained' }
+    }
     Write-Output ('TOTAL HTTP PASS: ' + $count)
     Write-Output ('Evidence: ' + $work)
     Write-Output ('Retained isolated DB: ' + $builder.InitialCatalog)
 } finally {
     $env:DACN_UI_TEST_PASSWORD = $null
+    foreach ($name in @('DACN_BROWSER_BASE','DACN_BROWSER_OUTPUT','DACN_BROWSER_DATABASE','DACN_BROWSER_PORT','DACN_BROWSER_ORDER')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
+    if ($chrome -and !$chrome.HasExited) { Stop-Process -Id $chrome.Id }
     if ($iis -and !$iis.HasExited) { Stop-Process -Id $iis.Id }
 }
