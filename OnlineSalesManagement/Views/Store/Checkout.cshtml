@@ -1,14 +1,20 @@
-@model OnlineSalesManagement.Controllers.OnlineCheckoutModel
+﻿@model OnlineSalesManagement.Controllers.OnlineCheckoutModel
+@using OnlineSalesManagement.Services
 @{ ViewBag.Title = "Đặt hàng"; }
-<h2>Đặt hàng: @Model.ProductName</h2>
-<p>Giá hiện tại: @Model.SalePrice.ToString("N0") đ. Giá được lấy lại từ server khi tạo đơn.</p>
+<div class="section-heading"><div><span class="shop-eyebrow">Hoàn tất lựa chọn</span><h1>Thông tin đặt hàng</h1><p>Đơn hàng sẽ được nhân viên xác nhận trước khi giao.</p></div><a href="@Url.Action("Cart")">← Quay lại giỏ hàng</a></div>
 @using (Html.BeginForm("Checkout", "Store", FormMethod.Post)) {
-    @Html.AntiForgeryToken() @Html.HiddenFor(m => m.ProductId) @Html.HiddenFor(m => m.Token)
-    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
-    <div class="mb-3"><label for="Quantity">Số lượng</label>@Html.TextBoxFor(m => m.Quantity, new { type = "number", min = "1", max = "1000", @class = "form-control" })</div>
-    <div class="mb-3"><label for="FullName">Người nhận</label>@Html.TextBoxFor(m => m.FullName, new { @class = "form-control", maxlength = "150" })</div>
-    <div class="mb-3"><label for="PhoneNumber">Số điện thoại</label>@Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", maxlength = "20" })</div>
-    <div class="mb-3"><label for="ShippingAddress">Địa chỉ giao hàng</label>@Html.TextAreaFor(m => m.ShippingAddress, new { @class = "form-control", maxlength = "300" })</div>
-    <p>Thanh toán khi nhận hàng. Đặt hàng chưa giữ hoặc trừ tồn kho.</p>
-    <button type="submit" class="btn btn-primary">Tạo đơn chờ xác nhận</button>
+    @Html.AntiForgeryToken() @Html.HiddenFor(m => m.Token)
+    @Html.ValidationSummary(false, "", new { @class = "text-danger validation-panel", role = "alert" })
+    <div class="shopping-columns"><section class="shop-panel checkout-fields"><h2 class="h5 mb-4">Người nhận & địa chỉ giao hàng</h2>
+        <div class="mb-3"><label for="FullName" class="form-label">Họ tên người nhận</label>@Html.TextBoxFor(m => m.FullName, new { @class = "form-control", maxlength = "150", required = "required", autocomplete = "shipping name" })</div>
+        <div class="mb-3"><label for="PhoneNumber" class="form-label">Số điện thoại</label>@Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", maxlength = "20", required = "required", type = "tel", autocomplete = "shipping tel", placeholder = "Ví dụ: 0901234567" })</div>
+        <div class="mb-3"><label for="ShippingAddress" class="form-label">Địa chỉ giao hàng</label>@Html.TextAreaFor(m => m.ShippingAddress, new { @class = "form-control", maxlength = "300", required = "required", autocomplete = "shipping street-address", rows = "3" })</div>
+        <div class="mb-3"><label for="Note" class="form-label">Ghi chú <span class="text-muted">(không bắt buộc)</span></label>@Html.TextAreaFor(m => m.Note, new { @class = "form-control", maxlength = "300", rows = "3", placeholder = "Hướng dẫn giao hàng hoặc yêu cầu của bạn" })</div>
+        <div class="payment-choice"><strong>Thanh toán khi nhận hàng</strong><p>Kiểm tra thông tin người nhận trước khi gửi đơn.</p></div>
+    </section><aside class="shop-panel order-summary"><h2 class="h5">Đơn hàng của bạn</h2>
+    @foreach (var line in Model.Cart.Lines) { <div class="checkout-product"><img class="checkout-thumbnail" src="@StorePresentation.ImageUrl(Url, line.ImageUrl)" alt="" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" /><div><strong>@line.Name</strong><small>@line.Sku · @line.Quantity × @line.Price.ToString("N0") ₫</small><span>@line.Total.ToString("N0") ₫</span></div></div> }
+    <div class="summary-total"><span>Tổng thanh toán</span><strong>@Model.Cart.Total.ToString("N0") ₫</strong></div>
+    @if (Model.Cart.CanCheckout) { <button type="submit" class="btn btn-primary w-100">Đặt hàng · Chờ xác nhận</button> }
+    <p class="summary-note">Đơn mới chưa giữ hàng. Số lượng còn lại được kiểm tra lại khi xác nhận đơn.</p>
+    </aside></div>
 }

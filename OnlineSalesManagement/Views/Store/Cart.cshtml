@@ -1,0 +1,45 @@
+﻿@model OnlineSalesManagement.Services.CartViewModel
+@using OnlineSalesManagement.Services
+@{ ViewBag.Title = "Giỏ hàng"; }
+<div class="section-heading"><div><span class="shop-eyebrow">Mua sắm cùng OSshop</span><h1>Giỏ hàng của bạn</h1><p>@Model.Lines.Sum(l => l.Quantity) sản phẩm · @Model.Lines.Count mặt hàng</p></div><a href="@Url.Action("Index")">← Tiếp tục mua sắm</a></div>
+@if (TempData["CartError"] != null) { <div class="alert alert-warning" role="alert">@TempData["CartError"]</div> }
+@if (Model.Lines.Count == 0) {
+    <section class="empty-state"><img src="@Url.Content("~/Content/product-placeholder.svg")" alt="" class="empty-cart-image" /><h2 class="h4">Giỏ hàng đang trống</h2><p>Một sản phẩm bạn yêu thích đang chờ được khám phá.</p><a href="@Url.Action("Index")" class="btn btn-primary">Bắt đầu mua sắm</a></section>
+} else {
+<div class="shopping-columns"><section class="shop-panel cart-items" aria-label="Sản phẩm trong giỏ">
+@foreach (var line in Model.Lines) {
+    <article class="cart-line" data-cart-product="@line.ProductId">
+        <img class="cart-thumbnail" src="@StorePresentation.ImageUrl(Url, line.ImageUrl)" alt="" loading="lazy" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" />
+        <div class="cart-product-info"><h2 class="h6">@line.Name</h2><span class="product-sku">@line.Sku</span><p class="cart-unit-price">Đơn giá: @line.Price.ToString("N0") ₫</p>
+            @if (!line.Valid) { <p class="text-danger small mb-0">Ngừng bán hoặc vượt số lượng còn lại (@line.Stock). Vui lòng cập nhật hoặc xóa.</p> }
+        </div>
+        <div class="cart-quantity-area"><span class="quantity-caption">Số lượng</span><div class="quantity-controls">
+            @using (Html.BeginForm("UpdateCart", "Store", FormMethod.Post)) {
+                @Html.AntiForgeryToken()<input type="hidden" name="version" value="@Model.Version" /><input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="@(line.Quantity - 1)" />
+                <button class="quantity-step" type="submit" disabled="@(line.Quantity <= 1 ? "disabled" : null)" aria-label="Giảm số lượng @line.Name">−</button>
+            }
+            @using (Html.BeginForm("UpdateCart", "Store", FormMethod.Post, new { @class = "quantity-edit" })) {
+                @Html.AntiForgeryToken()<input type="hidden" name="version" value="@Model.Version" /><input type="hidden" name="productId" value="@line.ProductId" />
+                <label class="visually-hidden" for="qty-@line.ProductId">Số lượng @line.Name</label><input id="qty-@line.ProductId" name="quantity" value="@line.Quantity" type="number" min="1" max="1000" class="quantity-input" required />
+                <button class="quantity-update" type="submit">Cập nhật</button>
+            }
+            @using (Html.BeginForm("UpdateCart", "Store", FormMethod.Post)) {
+                @Html.AntiForgeryToken()<input type="hidden" name="version" value="@Model.Version" /><input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="@(line.Quantity + 1)" />
+                <button class="quantity-step" type="submit" disabled="@(line.Quantity >= Math.Min(1000, line.Stock) || !line.Available ? "disabled" : null)" aria-label="Tăng số lượng @line.Name">+</button>
+            }
+        </div></div>
+        <div class="cart-line-end"><strong>@line.Total.ToString("N0") ₫</strong>
+            @using (Html.BeginForm("UpdateCart", "Store", FormMethod.Post)) {
+                @Html.AntiForgeryToken()<input type="hidden" name="version" value="@Model.Version" /><input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="0" />
+                <button type="submit" class="remove-item" aria-label="Xóa @line.Name khỏi giỏ">Xóa món</button>
+            }
+        </div>
+    </article>
+}
+</section><aside class="shop-panel order-summary"><h2 class="h5">Tóm tắt giỏ hàng</h2><div class="summary-row"><span>Tạm tính</span><span>@Model.Total.ToString("N0") ₫</span></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@Model.Total.ToString("N0") ₫</strong></div>
+@if (Model.CanCheckout) { <a href="@Url.Action("Checkout")" class="btn btn-primary w-100">Tiến hành đặt hàng →</a> }
+else { <button class="btn btn-primary w-100" disabled>Vui lòng kiểm tra lại giỏ</button> }
+<p class="summary-note">Thanh toán khi nhận hàng. Số lượng và giá được kiểm tra lại khi bạn đặt đơn.</p>
+@using (Html.BeginForm("ClearCart", "Store", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="version" value="@Model.Version" /><button type="submit" class="btn btn-outline-secondary w-100 btn-sm">Làm trống giỏ</button> }
+</aside></div>
+}

@@ -1,12 +1,20 @@
-@model OnlineSalesManagement.SalesOrder
-@{ ViewBag.Title = "Chi tiết đơn của tôi"; }
-<h2>Đơn @Model.OrderNumber</h2>
-<p>Ngày đặt: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm") · Trạng thái: @Html.DisplayFor(m => m.Status)</p>
-<p>Giao đến: @Model.ShippingAddress</p><p>@Model.Note</p>
-<p>Thanh toán: @Html.DisplayFor(m => m.PaymentMethod) · @Html.DisplayFor(m => m.PaymentStatus)</p>
-<div class="table-responsive"><table class="table"><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá lúc đặt</th><th>Thành tiền</th></tr></thead><tbody>
-@foreach (var d in Model.Details) { <tr><td>@d.Product.Name</td><td>@d.Quantity</td><td>@d.UnitPrice.ToString("N0") đ</td><td>@((d.Quantity * d.UnitPrice).ToString("N0")) đ</td></tr> }
-</tbody></table></div>
-<p>Tạm tính: @Model.SubTotal.ToString("N0") đ · Giảm giá: @Model.DiscountAmount.ToString("N0") đ</p>
-<p><strong>Tổng thanh toán: @Model.TotalAmount.ToString("N0") đ</strong></p>
-<p>@Html.ActionLink("Đơn của tôi", "Orders")</p>
+﻿@model OnlineSalesManagement.SalesOrder
+@using OnlineSalesManagement.Services
+@{
+    ViewBag.Title = "Chi tiết đơn hàng";
+    string updateMessage;
+    switch (Model.Status) {
+        case OnlineSalesManagement.OrderStatus.Pending: updateMessage = "Đã tiếp nhận đơn hàng. Cửa hàng đang chờ xác nhận sản phẩm để giao đến bạn."; break;
+        case OnlineSalesManagement.OrderStatus.Confirmed: updateMessage = "Đơn hàng đã được xác nhận. Cửa hàng đang chuẩn bị giao hàng cho bạn."; break;
+        case OnlineSalesManagement.OrderStatus.Completed: updateMessage = "Đơn hàng đã hoàn tất. Cảm ơn bạn đã mua sắm cùng OSshop."; break;
+        case OnlineSalesManagement.OrderStatus.Cancelled: updateMessage = "Đơn hàng đã bị hủy. Bạn có thể tiếp tục lựa chọn sản phẩm khác tại cửa hàng."; break;
+        default: updateMessage = "Vui lòng liên hệ cửa hàng để kiểm tra trạng thái đơn."; break;
+    }
+}
+<div class="section-heading"><div><span class="shop-eyebrow">Chi tiết đơn hàng</span><h1 class="order-code">@Model.OrderNumber</h1><p>Đặt lúc @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p></div><a href="@Url.Action("Orders")">← Đơn hàng của tôi</a></div>
+<div class="order-update status-@((int)Model.Status)" role="status">@Html.DisplayFor(m => m.Status, "OrderStatus")<p>@updateMessage</p></div>
+<div class="shopping-columns"><section class="shop-panel"><h2 class="h5 mb-4">Sản phẩm đã đặt</h2>
+@foreach (var line in Model.Details) {
+    <article class="ordered-product"><img class="cart-thumbnail" src="@StorePresentation.ImageUrl(Url, line.Product.ImageUrl)" alt="" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" /><div><h3 class="h6">@line.Product.Name</h3><p class="product-sku">@line.Product.Sku</p><span class="text-muted small">@line.Quantity × @line.UnitPrice.ToString("N0") ₫</span></div><strong>@((line.Quantity * line.UnitPrice).ToString("N0")) ₫</strong></article>
+}
+</section><aside class="shop-panel order-summary"><h2 class="h5">Thông tin đơn hàng</h2><div class="delivery-info"><h3 class="h6">Địa chỉ giao hàng</h3><p>@Model.ShippingAddress</p><p class="order-note">@Model.Note</p><h3 class="h6">Thanh toán</h3><p>@Html.DisplayFor(m => m.PaymentMethod, "PaymentMethod")<br />@Html.DisplayFor(m => m.PaymentStatus, "PaymentStatus")</p></div><div class="summary-row"><span>Tạm tính</span><span>@Model.SubTotal.ToString("N0") ₫</span></div><div class="summary-row"><span>Giảm giá</span><span>@Model.DiscountAmount.ToString("N0") ₫</span></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@Model.TotalAmount.ToString("N0") ₫</strong></div><a href="@Url.Action("Index")" class="btn btn-outline-primary w-100">Tiếp tục mua sắm</a></aside></div>

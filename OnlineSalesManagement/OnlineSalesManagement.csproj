@@ -170,6 +170,9 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Services\NavigationAccess.cs" />
+    <Compile Include="Services\ShoppingCart.cs" />
+    <Compile Include="Services\StorePresentation.cs" />
+    <Compile Include="Services\DemoCatalog.cs" />
     <Compile Include="Services\IdentityProvisioning.cs" />
     <Compile Include="Services\DashboardService.cs" />
     <Compile Include="ViewModels\DashboardViewModel.cs" />
@@ -278,6 +281,19 @@
     <Content Include="Views\Web.config" />
     <Content Include="Views\Store\Index.cshtml" />
     <Content Include="Views\Store\Checkout.cshtml" />
+    <Content Include="Views\Store\Cart.cshtml" />
+    <Content Include="Views\Store\_CartBadge.cshtml" />
+    <Content Include="Views\Shared\_CustomerLayout.cshtml" />
+    <Content Include="Content\customer.css" />
+    <Content Include="Scripts\customer.js" />
+    <Content Include="Scripts\store-menu.js" />
+    <Content Include="Views\Store\_CategoryMenu.cshtml" />
+    <Content Include="Views\Store\_ProductModal.cshtml" />
+    <Content Include="Views\Shared\_ShopToast.cshtml" />
+    <Content Include="Views\Shared\DisplayTemplates\OrderStatus.cshtml" />
+    <Content Include="Views\Shared\DisplayTemplates\PaymentStatus.cshtml" />
+    <Content Include="Views\Shared\DisplayTemplates\PaymentMethod.cshtml" />
+    <Content Include="Content\product-placeholder.svg" />
     <Content Include="Views\Store\Orders.cshtml" />
     <Content Include="Views\Store\Details.cshtml" />
     <Content Include="Views\AdminUsers\Index.cshtml" />
@@ -315,6 +331,7 @@
     <Content Include="Views\Products\Details.cshtml" />
     <Content Include="Views\Products\Edit.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="Views\Shared\_DocumentFilters.cshtml" />
     <Content Include="Views\Products\Index.cshtml" />
     <Content Include="Views\Suppliers\Create.cshtml" />
     <Content Include="Views\Suppliers\Delete.cshtml" />

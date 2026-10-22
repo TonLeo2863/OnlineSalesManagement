@@ -45,6 +45,8 @@ namespace OnlineSalesManagement.Services
             using (var transaction = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
                 ValidateReferences(db, input);
+                if (input.Channel == SalesChannel.Online && !db.Customers.Any(c => c.Id == input.CustomerId && c.IsActive))
+                    throw new InvalidOperationException("Hồ sơ khách hàng đã ngừng hoạt động.");
                 var order = new SalesOrder
                 {
                     OrderNumber = input.OrderNumber.Trim(),
@@ -61,6 +63,11 @@ namespace OnlineSalesManagement.Services
                 foreach (var line in input.Details)
                 {
                     var product = LoadSaleProduct(db, line.ProductId);
+                    // Online checkout must validate again inside the order transaction.
+                    // Counter orders retain the existing pending/confirm workflow.
+                    if (input.Channel == SalesChannel.Online &&
+                        (product.Category == null || !product.Category.IsActive || !product.HasEnoughStock(line.Quantity)))
+                        throw new InvalidOperationException("Sản phẩm ngừng bán hoặc không đủ tồn: " + product.Name);
                     order.Details.Add(new SalesOrderDetail
                     {
                         ProductId = line.ProductId,

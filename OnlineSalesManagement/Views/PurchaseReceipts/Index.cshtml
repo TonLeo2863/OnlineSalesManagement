@@ -5,15 +5,10 @@
     ViewBag.Title = "Quản lý nhập kho";
 }
 
-<h2>Quản lý nhập kho</h2>
-
-<p>
-    @Html.ActionLink(
-            "Tạo phiếu nhập mới",
-            "Create",
-            null,
-            new { @class = "btn btn-primary" })
-</p>
+<div class="page-header document-page-header">
+    <div><h1 class="page-title">Quản lý nhập kho</h1><p class="page-subtitle">Theo dõi chứng từ và tra cứu theo điều kiện.</p></div>
+    <a href="@Url.Action("Create")" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tạo phiếu nhập mới</a>
+</div>
 
 @if (TempData["Success"] != null)
 {
@@ -22,14 +17,16 @@
     </div>
 }
 
-<table class="table table-bordered table-striped">
+@Html.Partial("_DocumentFilters")
+<p class="result-meta" role="status">@Model.Count() chứng từ phù hợp</p>
+<div class="panel table-responsive"><table class="table table-hover align-middle data-table">
     <thead>
         <tr>
             <th>Số phiếu</th>
-            <th>Nhà cung cấp</th>
+            <th>Ngày nhập</th><th>Nhà cung cấp</th>
             <th>Nhân viên</th>
             <th>Trạng thái</th>
-            <th>Tổng tiền</th>
+            <th class="text-end">Tổng tiền</th>
             <th>Thao tác</th>
         </tr>
     </thead>
@@ -38,17 +35,19 @@
         {
             <tr>
                 <td>@item.ReceiptNumber</td>
-                <td>@item.Supplier.Name</td>
+                <td>@item.ReceiptDate.ToString("dd/MM/yyyy HH:mm")</td><td>@item.Supplier.Name</td>
                 <td>@item.Employee.FullName</td>
-                <td>@item.Status</td>
-                <td>@item.TotalAmount.ToString("N0") đ</td>
+                <td><span class="badge @(item.Status.ToString() == "Cancelled" ? "bg-secondary" : item.Status.ToString() == "Draft" || item.Status.ToString() == "Pending" ? "bg-warning text-dark" : "bg-success")">@(item.Status == OnlineSalesManagement.ReceiptStatus.Draft ? "Nháp" : item.Status == OnlineSalesManagement.ReceiptStatus.Confirmed ? "Đã nhập kho" : "Đã hủy")</span></td>
+                <td class="text-end text-nowrap">@item.TotalAmount.ToString("N0") đ</td>
                 <td>
                     @Html.ActionLink(
                              "Chi tiết", "Details",
                              new { id = item.Id },
-                             new { @class = "btn btn-sm btn-info" })
+                             new { @class = "btn btn-sm btn-outline-primary" })
                 </td>
             </tr>
         }
     </tbody>
 </table>
+@if (!Model.Any()) { <p class="text-center text-muted p-4">Không có chứng từ phù hợp.</p> }
+</div>

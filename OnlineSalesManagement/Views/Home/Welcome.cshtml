@@ -1,8 +1,17 @@
-@{ ViewBag.Title = "Chào mừng"; }
-<section class="dashboard-hero"><div><span class="dashboard-eyebrow">CỬA HÀNG TRỰC TUYẾN</span><h1>Mua sắm thuận tiện,<br />theo dõi đơn dễ dàng.</h1><p>Khám phá sản phẩm và đặt hàng để được nhân viên xác nhận.</p>@Html.ActionLink("Khám phá cửa hàng", "Index", "Store", null, new { @class = "btn btn-light btn-lg" })</div></section>
-<div class="dashboard-panels">
-<section class="panel dashboard-actions"><h2>Sản phẩm dành cho bạn</h2><p>Xem giá và tình trạng hàng hiện tại tại cửa hàng trực tuyến.</p>@Html.ActionLink("Xem sản phẩm →", "Index", "Store")</section>
-<section class="panel dashboard-actions"><h2>Đơn hàng của tôi</h2>
-@if (User.Identity.IsAuthenticated) { <p>Theo dõi những đơn hàng thuộc tài khoản của bạn.</p>@Html.ActionLink("Xem đơn của tôi →", "Orders", "Store") }
-else { <p>Đăng nhập để đặt hàng và theo dõi đơn của bạn.</p>@Html.ActionLink("Đăng nhập →", "Login", "Account") }
-</section></div>
+﻿@model IEnumerable<OnlineSalesManagement.Product>
+@using OnlineSalesManagement.Services
+@{ ViewBag.Title = "Mua sắm cùng OSshop"; }
+<section class="shop-hero">
+    <div><span class="shop-eyebrow">Chào mừng đến với OSshop</span><h1>Chọn điều bạn thích.<br />Mua sắm thật dễ dàng.</h1><p>Khám phá sản phẩm, thêm vào giỏ và theo dõi đơn hàng ngay trong tài khoản của bạn.</p><a class="btn btn-primary" href="@Url.Action("Index", "Store")">Khám phá cửa hàng →</a></div>
+    <div class="hero-art" aria-hidden="true"><img src="@Url.Content("~/Content/product-placeholder.svg")" alt="" /><span>Sẵn sàng cho lần mua sắm tiếp theo</span></div>
+</section>
+<div class="shop-benefits"><div><strong>Sản phẩm rõ ràng</strong><span>Giá bán và số lượng luôn hiển thị minh bạch.</span></div><div><strong>Đặt hàng thuận tiện</strong><span>Nhiều sản phẩm trong cùng một đơn hàng.</span></div><div><strong>Theo dõi dễ dàng</strong><span>Xem trạng thái đơn trong tài khoản của bạn.</span></div></div>
+<section aria-labelledby="featured-title">
+    <div class="section-heading"><div><span class="shop-eyebrow">Gợi ý mua sắm</span><h2 id="featured-title">Sản phẩm nổi bật</h2></div><a href="@Url.Action("Index", "Store")">Xem tất cả →</a></div>
+    <div class="product-grid">
+    @foreach (var product in Model) {
+        <article class="shop-product"><a href="@Url.Action("Index", "Store", new { q = product.Sku })" tabindex="-1" aria-hidden="true"><img class="product-image" src="@StorePresentation.ImageUrl(Url, product.ImageUrl)" alt="" loading="lazy" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" /></a><div class="product-info"><div class="product-sku">@product.Sku</div><h3 class="product-name">@product.Name</h3><p class="product-price">@product.SalePrice.ToString("N0") ₫</p><p class="product-stock">@(product.QuantityInStock > 0 ? "Số lượng còn lại: " + product.QuantityInStock : "Hết hàng")</p><a class="btn btn-outline-primary" href="@Url.Action("Index", "Store", new { q = product.Sku })">Khám phá sản phẩm</a></div></article>
+    }
+    </div>
+    @if (!Model.Any()) { <div class="empty-state">Sản phẩm đang được cập nhật. Mời bạn quay lại sau.</div> }
+</section>

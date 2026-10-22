@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -12,7 +13,13 @@ namespace OnlineSalesManagement.Controllers
     {
         public ActionResult Index()
         {
-            if (!DashboardService.IsStaff(User)) return View("Welcome");
+            if (!DashboardService.IsStaff(User))
+            {
+                using (var db = new ApplicationDbContext())
+                    return View("Welcome", db.Products.AsNoTracking().Include(p => p.Category)
+                        .Where(p => p.IsActive && p.Category.IsActive).OrderByDescending(p => p.QuantityInStock > 0)
+                        .ThenByDescending(p => p.CreatedDate).Take(4).ToList());
+            }
             using (var db = new ApplicationDbContext())
                 return View(DashboardService.Load(db, User));
         }

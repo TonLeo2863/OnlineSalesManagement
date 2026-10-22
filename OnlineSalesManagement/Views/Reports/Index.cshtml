@@ -4,9 +4,11 @@
     ViewBag.Title = "Thống kê doanh thu";
 }
 
-<h2>Thống kê doanh thu</h2>
+<header class="report-heading"><span class="management-eyebrow">ONLINE SALES MANAGEMENT</span><h2>BÁO CÁO DOANH THU</h2><p>Hệ thống quản lý bán hàng</p>
+@if (ViewData.ModelState.IsValid) { <p>Kỳ báo cáo: <strong>@Model.FromDate.ToString("dd/MM/yyyy") – @Model.ToDate.ToString("dd/MM/yyyy")</strong></p> }
+<p class="text-muted">Ngày in: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") · Người lập: @User.Identity.Name</p></header>
 
-<div class="mb-3">
+<div class="mb-3 no-print">
     @Html.ActionLink("Doanh thu", "Index", null,
         new { @class = "btn btn-primary" })
     @Html.ActionLink("Hàng nhập", "Purchases", null,
@@ -76,7 +78,7 @@
                 <th>Ngày đặt</th>
                 <th>Khách hàng</th>
                 <th>Kênh bán</th>
-                <th>Tổng thanh toán</th>
+                <th class="text-end">Tổng thanh toán</th>
             </tr>
         </thead>
         <tbody>
@@ -91,22 +93,48 @@
                     <td>@r.Date.ToString("dd/MM/yyyy HH:mm")</td>
                     <td>@r.PartnerName</td>
                     <td>@r.Channel</td>
-                    <td>@r.Amount.ToString("N0") đ</td>
+                    <td class="text-end text-nowrap">@r.Amount.ToString("N0") đ</td>
                 </tr>
             }
         </tbody>
+        <tfoot><tr><th colspan="4">Tổng cộng (@Model.DocumentCount đơn)</th><th class="text-end">@Model.TotalAmount.ToString("N0") đ</th></tr></tfoot>
     </table>
+    if (!Model.Rows.Any()) { <p class="text-muted">Không có đơn hàng hợp lệ trong kỳ báo cáo.</p> }
+
 
     <p class="text-muted">
         Doanh thu theo ngày đặt đơn và trạng thái hiện tại,
         chưa phản ánh tiền đã thực thu hoặc lợi nhuận.
     </p>
+    <div class="report-signatures"><div><strong>Người lập báo cáo</strong><p>(Ký và ghi rõ họ tên)</p></div><div><strong>Người kiểm tra</strong><p>(Ký và ghi rõ họ tên)</p></div><div><strong>Người phê duyệt</strong><p>(Ký và ghi rõ họ tên)</p></div></div>
 }
 
 <style>
-    @@media print {
-        .no-print, nav, footer {
-            display: none !important;
-        }
-    }
+ .report-heading { border-bottom:2px solid #2563eb; padding-bottom:16px; margin-bottom:24px; }
+ .report-heading h2 { font-weight:750; margin-top:8px; }
+ .report-signatures { display:flex; justify-content:space-around; text-align:center; gap:20px; margin-top:30px; padding-bottom:70px; break-inside:avoid; }
+ .report-signatures p { color:#64748b; font-size:.85rem; margin-top:8px; }
+ @@media print {
+  @@page { size:A4 portrait; margin:12mm; }
+  .sidebar, .sidebar-overlay, .topbar, .admin-footer, .no-print, nav, footer { display:none !important; }
+  html, body.admin-body { background:#fff !important; color:#000; font-size:10pt; }
+  .main { margin:0 !important; padding:0 !important; width:100% !important; }
+  .admin-content { padding:0 !important; max-width:none !important; }
+  .report-heading { text-align:center; border-color:#222; margin-bottom:16px; }
+  .report-heading h2 { font-size:19pt; }
+  .report-heading p { margin-bottom:4px; }
+  .row { display:flex; flex-wrap:nowrap; margin:0; gap:8px; }
+  .row > .col-md-4 { width:33.333%; padding:0; }
+  .card { box-shadow:none !important; border:1px solid #777; padding:10px !important; break-inside:avoid; }
+  .card h3 { font-size:15pt; }
+  table { width:100%; border-collapse:collapse; font-size:9pt; }
+  .table th, .table td { padding:6px; border:1px solid #888; }
+  thead { display:table-header-group; }
+  tfoot { display:table-row-group; font-weight:bold; }
+  tr, .report-signatures { break-inside:avoid; }
+  a, a:visited { color:#000 !important; text-decoration:none !important; }
+  a[href]:after { content:none !important; }
+  .text-muted { color:#444 !important; }
+  .report-signatures { margin-top:24px; padding-bottom:55px; }
+ }
 </style>

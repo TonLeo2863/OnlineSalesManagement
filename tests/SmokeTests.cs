@@ -9,6 +9,7 @@ using System.Web.Routing;
 using System.Web.Mvc;
 using OnlineSalesManagement;
 using OnlineSalesManagement.Controllers;
+using OnlineSalesManagement.Services;
 
 // Tests without database writes. Compile/run with Run-SmokeTests.ps1.
 public static class SmokeTests
@@ -51,6 +52,21 @@ public static class SmokeTests
     {
         try
         {
+            var cartA = new ShoppingCart("a");
+            var cartB = new ShoppingCart("b");
+            var oldVersion = cartA.Version;
+            cartA.SetQuantity(1, 3); cartA.SetQuantity(2, 2); cartA.SetQuantity(3, 1);
+            Check(cartA.Items.Count == 3 && cartB.Items.Count == 0, "cart owners isolated");
+            Check(!cartA.Matches(oldVersion) && !cartA.Matches(cartB.Version), "stale and foreign mutation version rejected");
+            cartA.CheckoutToken = "old";
+            cartA.SetQuantity(1, 2);
+            Check(cartA.CheckoutToken == null && cartA.Items[1] == 2, "quantity update invalidates checkout snapshot");
+            cartA.SetQuantity(2, 0);
+            Check(cartA.Items.Count == 2, "zero quantity removes line");
+            cartA.Submitted("completed", 123);
+            Check(cartA.Items.Count == 0 && cartA.SubmittedOrders["completed"] == 123, "submitted cart retains replay receipt and clears lines");
+            foreach (var method in typeof(StoreController).GetMethods().Where(m => m.IsDefined(typeof(HttpPostAttribute), true)))
+                Check(method.IsDefined(typeof(ValidateAntiForgeryTokenAttribute), true), "cart POST anti-forgery " + method.Name);
             var p = new Product { QuantityInStock = 10 };
             p.IncreaseStock(5);
             Check(p.QuantityInStock == 15, "stock increase");
@@ -108,13 +124,13 @@ public static class SmokeTests
             }
             using (var store = StoreFor("customer-b", "customer-a", 1))
             {
-                var result = store.Checkout(new OnlineCheckoutModel { Token = "checkout-test", ProductId = 1 }) as HttpStatusCodeResult;
+                var result = store.Checkout(new OnlineCheckoutModel { Token = "checkout-test" }) as HttpStatusCodeResult;
                 Check(result != null && result.StatusCode == 400, "checkout token bound to customer");
             }
             using (var store = StoreFor("customer-a", "customer-a", 1))
             {
-                var result = store.Checkout(new OnlineCheckoutModel { Token = "checkout-test", ProductId = 2 }) as HttpStatusCodeResult;
-                Check(result != null && result.StatusCode == 400, "checkout token bound to selected product");
+                var result = store.Checkout(new OnlineCheckoutModel { Token = "checkout-test" }) as HttpStatusCodeResult;
+                Check(result != null && result.StatusCode == 400, "legacy checkout token cannot submit a cart");
             }
             Console.WriteLine("TOTAL PASS: " + count);
             return 0;

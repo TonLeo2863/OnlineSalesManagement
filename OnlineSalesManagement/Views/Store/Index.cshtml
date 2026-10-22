@@ -1,16 +1,39 @@
-@model IEnumerable<OnlineSalesManagement.Product>
-@{ ViewBag.Title = "Mua hàng trực tuyến"; }
-<h2>Mua hàng trực tuyến</h2>
-<p>@Html.ActionLink("Đơn của tôi", "Orders")</p>
-@using (Html.BeginForm("Index", "Store", FormMethod.Get)) { <div class="input-group mb-3"><input name="q" value="@Request.QueryString["q"]" class="form-control" placeholder="Tìm tên hoặc SKU" /><button class="btn btn-primary" type="submit">Tìm</button></div> }
-<p class="text-muted">Hiển thị tối đa 200 sản phẩm; dùng tìm kiếm để thu hẹp. Đơn đặt hàng chờ nhân viên xác nhận, thanh toán khi nhận hàng.</p>
-<div class="row">
+﻿@model IEnumerable<OnlineSalesManagement.Product>
+@using OnlineSalesManagement.Services
+@{ ViewBag.Title = "Cửa hàng"; }
+
+<div class="section-heading"><div><span class="shop-eyebrow">Khám phá OSshop</span><h1>Tìm sản phẩm bạn yêu thích</h1><p>Lựa chọn hôm nay, mua sắm theo cách của bạn.</p></div><a href="@Url.Action("Orders")">Đơn hàng của tôi →</a></div>
+@using (Html.BeginForm("Index", "Store", FormMethod.Get, new { @class = "shop-search", role = "search" })) {
+    if (!string.IsNullOrWhiteSpace(Request.QueryString["categoryId"])) { <input type="hidden" name="categoryId" value="@Request.QueryString["categoryId"]" /> }
+    <label for="productSearch" class="visually-hidden">Tìm sản phẩm theo tên hoặc SKU</label><div class="input-group"><input id="productSearch" name="q" value="@Request.QueryString["q"]" class="form-control" placeholder="Bạn đang tìm sản phẩm gì?" /><button class="btn btn-primary" type="submit">Tìm kiếm</button></div>
+}
+<div class="store-catalog-layout">
+@Html.Partial("_CategoryMenu")
+<section class="store-catalog-results" aria-label="Danh sách sản phẩm">
+<div class="section-heading"><p>@Model.Count() sản phẩm · Thanh toán khi nhận hàng</p><a href="@Url.Action("Cart")">Xem giỏ hàng →</a></div>
+<div class="product-grid">
 @foreach (var p in Model) {
-    <div class="col-sm-6 col-lg-4 mb-3"><div class="card h-100"><div class="card-body">
-        <h3 class="h5">@p.Name</h3><p>@p.Sku</p><p>@p.Description</p>
-        <p>@p.SalePrice.ToString("N0") đ · Tồn hiện tại: @p.QuantityInStock</p>
-        @if (p.QuantityInStock > 0) { @Html.ActionLink("Chọn mua", "Checkout", new { id = p.Id }, new { @class = "btn btn-primary" }) }
-        else { <span class="text-muted">Tạm hết hàng</span> }
-    </div></div></div>
+    <article class="shop-product" data-product-id="@p.Id">
+        <img class="product-image" src="@StorePresentation.ImageUrl(Url, p.ImageUrl)" alt="@p.Name" loading="lazy" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" />
+        <div class="product-info"><span class="product-sku">@p.Sku</span><h2 class="product-name">@p.Name</h2><p class="product-price">@p.SalePrice.ToString("N0") ₫</p><p class="product-stock">@(p.QuantityInStock > 0 ? "Số lượng còn lại: " + p.QuantityInStock : "Hết hàng")</p>
+            <div class="product-actions">
+                @if (ViewBag.CartVersion != null) {
+                    using (Html.BeginForm("AddToCart", "Store", FormMethod.Post, new { data_add_cart = "true" })) {
+                        @Html.AntiForgeryToken()<input type="hidden" name="version" value="@ViewBag.CartVersion" /><input type="hidden" name="productId" value="@p.Id" /><input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn btn-primary" disabled="@(p.QuantityInStock <= 0 ? "disabled" : null)">Thêm vào giỏ</button>
+                    }
+                } else if (p.QuantityInStock > 0) { <a class="btn btn-primary" href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("Index", "Store") })" title="Đăng nhập để thêm sản phẩm">Thêm vào giỏ</a> }
+                else { <button type="button" class="btn btn-primary" disabled>Thêm vào giỏ</button> }
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#productModal" data-details-url="@Url.Action("ProductDetails", new { id = p.Id })" aria-label="Xem chi tiết @p.Name">Xem chi tiết</button>
+            </div>
+        </div>
+    </article>
 }
 </div>
+@if (!Model.Any()) { <div class="empty-state"><h2 class="h5">Chưa tìm thấy sản phẩm</h2><p>Thử tên hoặc mã SKU khác nhé.</p><a href="@Url.Action("Index")" class="btn btn-outline-primary">Xem tất cả sản phẩm</a></div> }
+<p class="catalog-note">Hiển thị tối đa 200 sản phẩm. Số lượng được kiểm tra lại khi đặt hàng và xác nhận đơn.</p>
+</section></div>
+@Html.Partial("_ProductModal")
+@section scripts {
+<script src="@Url.Content("~/Scripts/store-menu.js")"></script>
+}

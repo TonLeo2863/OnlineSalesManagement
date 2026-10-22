@@ -1,0 +1,100 @@
+﻿@{
+    bool purchase = string.Equals((string)ViewContext.RouteData.Values["controller"], "PurchaseReceipts", StringComparison.OrdinalIgnoreCase);
+    string[] advancedKeys = purchase
+        ? new[] { "supplierId", "employeeId", "minTotal", "maxTotal", "receiptNumber", "draftOnly", "confirmedOnly" }
+        : new[] { "customerId", "channel", "minTotal", "maxTotal", "orderNumber" };
+    bool expanded = advancedKeys.Any(k => !string.IsNullOrWhiteSpace(Request.QueryString[k]) && Request.QueryString[k] != "false");
+}
+@using (Html.BeginForm("Index", purchase ? "PurchaseReceipts" : "SalesOrders", FormMethod.Get, new { @class = "panel filter-bar document-filters", id = "documentFilters" }))
+{
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning mb-3" role="alert">
+            @Html.ValidationSummary(false, "Vui lòng kiểm tra điều kiện lọc.")
+        </div>
+    }
+    <div id="filterClientError" class="alert alert-warning mb-3" role="alert" hidden></div>
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label class="form-label small text-muted mb-1" for="keyword">Từ khóa</label>
+            @Html.TextBox("keyword", Request.QueryString["keyword"], new { @class = "form-control", type = "search", placeholder = "Mã chứng từ, tên đối tác, ghi chú…" })
+        </div>
+        <div class="col-12 col-sm-4 col-lg-2">
+            <label class="form-label small text-muted mb-1" for="status">Trạng thái</label>
+            @if (purchase)
+            {
+                @Html.DropDownList("status", EnumHelper.GetSelectList(typeof(OnlineSalesManagement.ReceiptStatus)), "Tất cả", new { @class = "form-select" })
+            }
+            else
+            {
+                @Html.DropDownList("status", EnumHelper.GetSelectList(typeof(OnlineSalesManagement.OrderStatus)), "Tất cả", new { @class = "form-select" })
+            }
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3">
+            <label class="form-label small text-muted mb-1" for="fromDate">Từ ngày</label>
+            @Html.TextBox("fromDate", Request.QueryString["fromDate"], new { @class = "form-control", type = "date", min = "1753-01-01", max = "9999-12-30" })
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3">
+            <label class="form-label small text-muted mb-1" for="toDate">Đến ngày</label>
+            @Html.TextBox("toDate", Request.QueryString["toDate"], new { @class = "form-control", type = "date", min = "1753-01-01", max = "9999-12-30" })
+        </div>
+    </div>
+    <details class="document-advanced" open="@(expanded ? "open" : null)">
+        <summary><span><i class="bi bi-sliders me-2" aria-hidden="true"></i>Bộ lọc nâng cao</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div class="row g-3 pt-2 pb-3">
+            @if (purchase)
+            {
+                <div class="col-12 col-md-6 col-xl-3"><label class="form-label small text-muted mb-1" for="supplierId">Nhà cung cấp</label>@Html.DropDownList("supplierId", (SelectList)ViewBag.SupplierOptions, "Tất cả nhà cung cấp", new { @class = "form-select" })</div>
+                <div class="col-12 col-md-6 col-xl-3"><label class="form-label small text-muted mb-1" for="employeeId">Nhân viên</label>@Html.DropDownList("employeeId", (SelectList)ViewBag.EmployeeOptions, "Tất cả nhân viên", new { @class = "form-select" })</div>
+            }
+            else
+            {
+                <div class="col-12 col-md-6 col-xl-3"><label class="form-label small text-muted mb-1" for="customerId">Khách hàng</label>@Html.DropDownList("customerId", (SelectList)ViewBag.CustomerOptions, "Tất cả khách hàng", new { @class = "form-select" })</div>
+                <div class="col-12 col-md-6 col-xl-3"><label class="form-label small text-muted mb-1" for="channel">Kênh bán</label>@Html.DropDownList("channel", EnumHelper.GetSelectList(typeof(OnlineSalesManagement.SalesChannel)), "Tất cả kênh bán", new { @class = "form-select" })</div>
+            }
+            <div class="col-6 col-xl-3"><label class="form-label small text-muted mb-1" for="minTotal">Tổng tiền từ (đ)</label>@Html.TextBox("minTotal", Request.QueryString["minTotal"], new { @class = "form-control", type = "number", min = "0", step = "0.01", placeholder = "0" })</div>
+            <div class="col-6 col-xl-3"><label class="form-label small text-muted mb-1" for="maxTotal">Tổng tiền đến (đ)</label>@Html.TextBox("maxTotal", Request.QueryString["maxTotal"], new { @class = "form-control", type = "number", min = "0", step = "0.01", placeholder = "Không giới hạn" })</div>
+            @if (purchase)
+            {
+                <div class="col-12 col-md-6"><label class="form-label small text-muted mb-1" for="receiptNumber">Mã phiếu</label>@Html.TextBox("receiptNumber", Request.QueryString["receiptNumber"], new { @class = "form-control", placeholder = "Nhập mã phiếu cần tìm" })</div>
+                <div class="col-12 col-md-6 d-flex gap-3 align-items-end pb-2 flex-wrap"><label>@Html.CheckBox("draftOnly", Request.QueryString.GetValues("draftOnly") != null && Request.QueryString.GetValues("draftOnly").Contains("true")) Chỉ phiếu Draft</label><label>@Html.CheckBox("confirmedOnly", Request.QueryString.GetValues("confirmedOnly") != null && Request.QueryString.GetValues("confirmedOnly").Contains("true")) Chỉ phiếu Confirmed</label></div>
+            }
+            else
+            {
+                <div class="col-12 col-md-6"><label class="form-label small text-muted mb-1" for="orderNumber">Mã đơn</label>@Html.TextBox("orderNumber", Request.QueryString["orderNumber"], new { @class = "form-control", placeholder = "Nhập mã đơn cần tìm" })</div>
+            }
+        </div>
+    </details>
+    <div class="document-filter-actions d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1" aria-hidden="true"></i>Áp dụng bộ lọc</button>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1" aria-hidden="true"></i>Xóa lọc</a>
+    </div>
+}
+<script>
+(function () {
+    var form = document.getElementById('documentFilters');
+    var message = document.getElementById('filterClientError');
+    function validate() {
+        var fields = form.elements, errors = [];
+        if (fields.fromDate.value && fields.toDate.value && fields.fromDate.value > fields.toDate.value)
+            errors.push('Từ ngày phải trước hoặc bằng đến ngày.');
+        if (fields.minTotal.value && fields.maxTotal.value && Number(fields.minTotal.value) > Number(fields.maxTotal.value))
+            errors.push('Tổng tiền từ không được lớn hơn tổng tiền đến.');
+        if (fields.draftOnly && fields.confirmedOnly && fields.draftOnly.checked && fields.confirmedOnly.checked)
+            errors.push('Chỉ chọn một tùy chọn: Draft hoặc Confirmed.');
+        message.textContent = errors.join(' ');
+        message.hidden = errors.length === 0;
+        return errors.length === 0;
+    }
+    // Native validation must reveal invalid fields inside the collapsed advanced section.
+    form.addEventListener('invalid', function (event) {
+        var advanced = event.target.closest('details');
+        if (advanced) advanced.open = true;
+    }, true);
+    form.addEventListener('input', validate);
+    form.addEventListener('change', validate);
+    form.addEventListener('submit', function (event) {
+        if (!validate()) { event.preventDefault(); message.scrollIntoView({ block: 'nearest' }); }
+    });
+})();
+</script>

@@ -28,6 +28,27 @@ namespace OnlineSalesManagement
                 LoginPath = new PathString("/Account/Login"),
                 Provider = new CookieAuthenticationProvider
                 {
+                    // MVC returns 401 for both unauthenticated and role-denied requests.
+                    // Only the former should become a challenge to Login.
+                    OnApplyRedirect = context =>
+                    {
+                        if (context.Request.User != null && context.Request.User.Identity != null
+                            && context.Request.User.Identity.IsAuthenticated)
+                        {
+                            context.Response.StatusCode = 403;
+                            var http = context.OwinContext.Get<System.Web.HttpContextBase>("System.Web.HttpContextBase");
+                            if (http != null) http.Response.TrySkipIisCustomErrors = true;
+                        }
+                        else if (string.Equals(context.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+                        {
+                            context.Response.StatusCode = 401;
+                            context.Response.ContentType = "application/json; charset=utf-8";
+                            var http = context.OwinContext.Get<System.Web.HttpContextBase>("System.Web.HttpContextBase");
+                            if (http != null) http.Response.TrySkipIisCustomErrors = true;
+                            context.Response.Write("{\"success\":false,\"message\":\"Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để thêm sản phẩm.\"}");
+                        }
+                        else context.Response.Redirect(context.RedirectUri);
+                    },
                     // Enables the application to validate the security stamp when the user logs in.
                     // This is a security feature which is used when you change a password or add an external login to your account.  
                     OnValidateIdentity = SecurityStampValidator.OnValidateIdentity<ApplicationUserManager, ApplicationUser>(

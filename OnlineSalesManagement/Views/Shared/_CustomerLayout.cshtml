@@ -1,0 +1,52 @@
+@using Microsoft.AspNet.Identity
+@{
+    var cartOwner = User.Identity.GetUserId();
+    var headerCart = string.IsNullOrWhiteSpace(cartOwner) ? null : Session["ShoppingCart:" + cartOwner] as OnlineSalesManagement.Services.ShoppingCart;
+    var headerCount = headerCart != null && headerCart.OwnerId == cartOwner ? headerCart.Items.Values.Sum() : 0;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title · OS Shop — Quản lý bán hàng</title>
+    <link rel="stylesheet" href="@Url.Content("~/Content/bootstrap.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/customer.css")" />
+</head>
+<body class="customer-body">
+<a class="skip-link" href="#main-content">Đến nội dung chính</a>
+<div class="shop-announcement">Mua sắm dễ dàng · Thanh toán khi nhận hàng</div>
+<header class="shop-header">
+    <nav class="navbar navbar-expand-lg container shop-navbar" aria-label="Điều hướng chính">
+        <a class="shop-brand" href="@Url.Action("Index", "Home")"><span class="shop-brand-mark">OS</span><span>OS<span class="brand-light">shop</span></span></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#shopNavigation" aria-controls="shopNavigation" aria-expanded="false" aria-label="Mở điều hướng"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="shopNavigation">
+            <div class="navbar-nav shop-links me-auto">
+                <a class="nav-link" href="@Url.Action("Index", "Home")">Trang chủ</a>
+                <a class="nav-link" href="@Url.Action("Index", "Store")">Cửa hàng</a>
+                <a class="nav-link" href="@Url.Action("Orders", "Store")">Đơn hàng của tôi</a>
+            </div>
+            <a class="shop-cart-link" href="@Url.Action("Cart", "Store")" aria-label="Giỏ hàng">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 3h3l2 12h12l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+                <span>Giỏ hàng</span>@Html.Partial("~/Views/Store/_CartBadge.cshtml", headerCount)
+            </a>
+            @if (Request.IsAuthenticated) {
+                <div class="shop-account"><a href="@Url.Action("Index", "Manage")" title="@User.Identity.GetUserName()">Tài khoản</a>
+                @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { @class = "d-inline" })) {
+                    @Html.AntiForgeryToken()<button type="submit" class="account-logout">Đăng xuất</button>
+                }</div>
+            } else {
+                <div class="shop-account"><a href="@Url.Action("Login", "Account")">Đăng nhập</a><a class="btn btn-primary btn-sm" href="@Url.Action("Register", "Account")">Đăng ký</a></div>
+            }
+        </div>
+    </nav>
+</header>
+<main id="main-content" class="container customer-content">@RenderBody()</main>
+<footer class="shop-footer"><div class="container d-flex flex-wrap justify-content-between gap-3"><div><strong>OSshop</strong><p>Mua sắm thuận tiện, theo dõi đơn dễ dàng.</p></div><small>© @DateTime.Now.Year OnlineSalesManagement</small></div></footer>
+@Html.Partial("_ShopToast")
+@Scripts.Render("~/bundles/jquery")
+<script src="@Url.Content("~/Scripts/bootstrap.bundle.js")"></script>
+<script src="@Url.Content("~/Scripts/customer.js")"></script>
+@RenderSection("scripts", required: false)
+</body>
+</html>

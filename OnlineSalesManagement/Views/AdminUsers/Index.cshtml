@@ -1,20 +1,61 @@
-@model IEnumerable<OnlineSalesManagement.Controllers.UserRoleRow>
+﻿@model IEnumerable<OnlineSalesManagement.Controllers.UserRoleRow>
 @{ ViewBag.Title = "Người dùng và vai trò"; }
-<h2>Người dùng và vai trò</h2>
-<p>Mỗi lần lưu chọn một vai trò chính, thay thế các vai trò cũ. Không được gỡ Admin của chính mình hoặc Admin cuối cùng.</p>
-@if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
-@if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
-<p>@Html.ActionLink("Hoạt động kho gần đây", "Activity")</p>
-<div class="table-responsive"><table class="table"><thead><tr><th>Tài khoản</th><th>Quyền hiện tại</th><th>Cấp quyền</th></tr></thead><tbody>
+<section class="management-page role-management">
+<header class="page-header document-page-header"><div><h1 class="page-title">Người dùng và vai trò</h1><p class="page-subtitle">Quản lý quyền truy cập cho từng tài khoản.</p></div>@Html.ActionLink("Hoạt động kho gần đây", "Activity", null, new { @class = "btn btn-outline-primary" })</header>
+<div class="alert alert-info">Mỗi lần lưu sẽ thay thế các vai trò cũ bằng một vai trò chính. Không được gỡ quyền Admin của chính mình hoặc Admin cuối cùng.</div>
+@if (TempData["Error"] != null) { <div class="toast show role-feedback role-feedback-error" data-bs-autohide="false" role="alert"><strong>Chưa thể lưu thay đổi</strong><div>@TempData["Error"]</div><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng thông báo"></button></div> }
+@if (TempData["Success"] != null) { <div class="toast show role-feedback role-feedback-success" data-bs-autohide="false" role="status"><strong>Đã lưu thay đổi</strong><div>@TempData["Success"]</div><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng thông báo"></button></div> }
+<div class="panel p-3 mb-3"><label for="userSearch" class="form-label">Tìm tài khoản hoặc vai trò</label><input id="userSearch" type="search" class="form-control" placeholder="Nhập email hoặc vai trò…" /><small id="userSearchCount" class="text-muted" role="status">@Model.Count() tài khoản</small></div>
+<div class="role-grid">
 @foreach (var item in Model) {
-    <tr><td>@item.Email</td><td>@item.Roles</td><td>
-    @using (Html.BeginForm("SetRole", "AdminUsers", FormMethod.Post)) {
-        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" />
-        <select name="role" required="required" class="form-select" aria-label="Vai trò cho @item.Email">
-            <option value="">Chọn vai trò mới</option>
-            @foreach (var role in OnlineSalesManagement.Controllers.AdminUsersController.AllowedRoles) { <option value="@role">@role</option> }
-        </select><button class="btn btn-primary btn-sm mt-1" type="submit">Lưu vai trò</button>
-    }
-    </td></tr>
+ <article class="role-card" data-user-card data-user-search="@item.Email @item.Roles">
+ <span class="role-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(item.Email) ? "?" : item.Email.Substring(0, 1).ToUpperInvariant())</span>
+ <div class="role-identity"><span class="role-caption">Tài khoản</span><strong>@item.Email</strong><div class="mt-2">
+ @foreach (var roleName in (item.Roles ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { <span class="badge bg-primary me-1">@roleName.Trim()</span> }
+ @if (string.IsNullOrWhiteSpace(item.Roles)) { <span class="badge bg-secondary">Chưa có vai trò</span> }
+ </div></div>
+ @using (Html.BeginForm("SetRole", "AdminUsers", FormMethod.Post, new { @class = "role-form", data_email = item.Email, data_roles = item.Roles })) {
+ @Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" />
+ <label class="visually-hidden" for="role-@item.Id">Vai trò mới cho @item.Email</label>
+ <select id="role-@item.Id" name="role" required="required" class="form-select" aria-label="Vai trò mới cho @item.Email"><option value="">Chọn vai trò mới</option>
+ @foreach (var role in OnlineSalesManagement.Controllers.AdminUsersController.AllowedRoles) { <option value="@role">@role</option> }
+ </select><button class="btn btn-primary text-nowrap" type="submit">Lưu thay đổi</button>
+ }
+ </article>
 }
-</tbody></table></div>
+</div>
+<p id="noMatchingUsers" hidden class="text-muted p-3">Không có tài khoản phù hợp.</p>
+@if (!Model.Any()) { <p class="management-panel p-4">Chưa có tài khoản.</p> }
+</section>
+<dialog id="roleConfirmation" class="border-0 rounded-3 shadow p-4" aria-labelledby="roleConfirmationTitle">
+ <div class="role-dialog-icon" aria-hidden="true"><i class="bi bi-person-check"></i></div>
+ <h3 id="roleConfirmationTitle" class="h5">Xác nhận lưu vai trò</h3><p id="roleConfirmationText"></p>
+ <div class="d-flex gap-2 justify-content-end"><button id="cancelRole" type="button" class="btn btn-outline-secondary">Hủy</button><button id="confirmRole" type="button" class="btn btn-primary">Xác nhận lưu</button></div>
+</dialog>
+@section scripts {
+<script>
+(function () {
+ var dialog = document.getElementById('roleConfirmation'), pending = null;
+ document.querySelectorAll('.role-form').forEach(function (form) { form.addEventListener('submit', function (event) {
+ event.preventDefault(); pending = form;
+ document.getElementById('confirmRole').disabled = false;
+ document.getElementById('roleConfirmationText').textContent = 'Tài khoản: ' + form.dataset.email + '. Quyền hiện tại: ' + (form.dataset.roles || 'Chưa có vai trò') + '. Quyền mới: ' + form.elements.role.value + '. Xác nhận lưu thay đổi?';
+ dialog.showModal();
+ }); });
+ document.getElementById('cancelRole').addEventListener('click', function () { pending = null; dialog.close(); });
+ dialog.addEventListener('cancel', function () { pending = null; });
+ document.getElementById('confirmRole').addEventListener('click', function () { if (pending) { this.disabled = true; var form = pending; pending = null; form.submit(); } });
+})();
+(function () {
+ var search = document.getElementById('userSearch');
+ var cards = Array.from(document.querySelectorAll('[data-user-card]'));
+ if (!search) return;
+ search.addEventListener('input', function () {
+   var term = search.value.trim().toLocaleLowerCase('vi'), count = 0;
+   cards.forEach(function (card) { card.hidden = card.getAttribute('data-user-search').toLocaleLowerCase('vi').indexOf(term) < 0; if (!card.hidden) count++; });
+   document.getElementById('userSearchCount').textContent = count + ' tài khoản';
+   document.getElementById('noMatchingUsers').hidden = count !== 0;
+ });
+})();
+</script>
+}

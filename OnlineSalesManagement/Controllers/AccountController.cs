@@ -58,7 +58,9 @@ namespace OnlineSalesManagement.Controllers
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
-            ViewBag.ReturnUrl = returnUrl;
+            // An existing session never needs another login to resolve missing roles.
+            if (User.Identity.IsAuthenticated) return RedirectToAction("Index", "Home");
+            ViewBag.ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
             return View();
         }
 
@@ -69,6 +71,7 @@ namespace OnlineSalesManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
+            ViewBag.ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -87,7 +90,7 @@ namespace OnlineSalesManagement.Controllers
                     return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
                 case SignInStatus.Failure:
                 default:
-                    ModelState.AddModelError("", "Invalid login attempt.");
+                    ModelState.AddModelError("", "Email hoặc mật khẩu không đúng.");
                     return View(model);
             }
         }
@@ -444,7 +447,8 @@ namespace OnlineSalesManagement.Controllers
 
         private ActionResult RedirectToLocal(string returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl))
+            if (Url.IsLocalUrl(returnUrl) && !returnUrl.StartsWith("/Account/", StringComparison.OrdinalIgnoreCase)
+                && !returnUrl.StartsWith("~/Account/", StringComparison.OrdinalIgnoreCase))
             {
                 return Redirect(returnUrl);
             }

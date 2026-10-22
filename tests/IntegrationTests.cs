@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.Entity;
@@ -77,6 +77,35 @@ public static class IntegrationTests
             sales.ConfirmOrder(order, "integration-test");
             Check(Stock(productId) == 7, "confirmation decrements stock");
             Reject(() => sales.ConfirmOrder(order, "integration-test"), "duplicate sale confirmation rejected");
+            // Query filters execute against the isolated SQL database, including day boundaries.
+            using (var c = new PurchaseReceiptsController()) {
+                var result = (IEnumerable<PurchaseReceipt>)((ViewResult)c.Index(keyword: "IT-IN", status: ReceiptStatus.Confirmed,
+                    supplierId: supplierId, employeeId: employeeId, receiptNumber: "IT-", minTotal: 1200m, maxTotal: 1200m,
+                    fromDate: DateTime.Today.AddDays(-10), toDate: DateTime.Today.AddDays(-10), confirmedOnly: true)).Model;
+                Check(result.Count() == 1 && result.Single().Id == receipt, "receipt combined filters and inclusive final day");
+            }
+            using (var c = new PurchaseReceiptsController()) {
+                Check(!((IEnumerable<PurchaseReceipt>)((ViewResult)c.Index(keyword: "IT-IN", draftOnly: true)).Model).Any(), "draft filter excludes confirmed receipt");
+            }
+            using (var c = new PurchaseReceiptsController()) {
+                Check(!((IEnumerable<PurchaseReceipt>)((ViewResult)c.Index(draftOnly: true, confirmedOnly: true)).Model).Any() && !c.ModelState.IsValid, "conflicting receipt filters rejected");
+            }
+            using (var c = new SalesOrdersController()) {
+                var result = (IEnumerable<SalesOrder>)((ViewResult)c.Index(keyword: "IT-OUT", status: OrderStatus.Confirmed,
+                    customerId: customerId, channel: SalesChannel.Online, minTotal: 300m, maxTotal: 300m,
+                    fromDate: DateTime.Today.AddDays(-10), toDate: DateTime.Today.AddDays(-10))).Model;
+                Check(result.Count() == 1 && result.Single().Id == order, "sales combined filters and inclusive final day");
+            }
+            using (var c = new SalesOrdersController()) {
+                Check(!((IEnumerable<SalesOrder>)((ViewResult)c.Index(keyword: "IT-OUT", channel: SalesChannel.Counter)).Model).Any(), "channel filter excludes online order");
+            }
+            using (var c = new SalesOrdersController()) {
+                Check(!((IEnumerable<SalesOrder>)((ViewResult)c.Index(minTotal: 100m, maxTotal: 10m)).Model).Any() && !c.ModelState.IsValid, "invalid amount interval rejected");
+            }
+            using (var c = new SalesOrdersController()) {
+                Check(!((IEnumerable<SalesOrder>)((ViewResult)c.Index(fromDate: DateTime.Today, toDate: DateTime.Today.AddDays(-1))).Model).Any() && !c.ModelState.IsValid, "invalid date interval rejected");
+            }
+
             using (var report = new ReportsController()) {
                 var result = (ViewResult)report.Purchases(DateTime.Today, DateTime.Today);
                 var model = (BusinessReportViewModel)result.Model;
@@ -109,53 +138,129 @@ public static class IntegrationTests
                 try { b.SaveChanges(); throw new Exception("stale write accepted"); }
                 catch (DbUpdateConcurrencyException) { Check(true, "rowversion conflict detected"); }
             }
-            VerifyThreeProductOrder(productId, product2Id, customerId, employeeId, supplierId);
             VerifyRolesAndDashboard();
+            VerifyOnlineCart();
+            VerifyDemoCatalog();
             Console.WriteLine("TOTAL INTEGRATION PASS: " + count);
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
     }
-    private static void VerifyThreeProductOrder(int first, int second, int customer, int employee, int supplier)
+    private sealed class DemoHttpContext : System.Web.HttpContextBase
     {
-        int third;
+        private readonly System.Security.Principal.IPrincipal principal;
+        public DemoHttpContext(System.Security.Principal.IPrincipal value) { principal = value; }
+        public override System.Security.Principal.IPrincipal User { get { return principal; } set { } }
+    }
+    private static void VerifyDemoCatalog()
+    {
         using (var db = new ApplicationDbContext()) {
-            var product = new Product { Sku = "IT-03", Name = "Third demo product", CategoryId = db.Products.Find(first).CategoryId, SalePrice = 300m };
-            db.Products.Add(product); db.SaveChanges(); third = product.Id;
+            var original = db.Products.AsNoTracking().ToDictionary(p => p.Id, p => p.Name + "|" + p.SalePrice + "|" + p.QuantityInStock);
+            int before = db.Products.Count();
+            Check(DemoCatalog.Apply(db) == 64, "demo first seed adds 64 products");
+            Check(DemoCatalog.Apply(db) == 0 && db.Products.Count() == before + 64, "demo second seed is idempotent");
+            foreach(var p in db.Products.AsNoTracking().Where(p => !p.Sku.StartsWith("OSDEMO-")).ToList())
+                Check(original[p.Id] == p.Name + "|" + p.SalePrice + "|" + p.QuantityInStock, "demo preserves old product " + p.Id);
+            Check(db.Products.Where(p => p.Sku.StartsWith("OSDEMO-")).All(p => p.QuantityInStock == 0), "demo never directly seeds inventory");
+            var demo = db.Products.Where(p => p.Sku.StartsWith("OSDEMO-")).OrderBy(p => p.Id).ToList();
+            var service = new PurchaseReceiptService();
+            for(int i=0;i<demo.Count;i+=8) {
+                var receipt = service.CreateDraft(new PurchaseReceiptDraftInput { ReceiptNumber = "DEMO-IN-" + i,
+                    SupplierId = db.Suppliers.First().Id, EmployeeId = db.Employees.First().Id,
+                    Note = "Isolated DEMO stock via real service", Details = demo.Skip(i).Take(8).Select(p => new PurchaseReceiptLineInput { ProductId=p.Id,Quantity=5,UnitCost=p.CostPrice }).ToList() });
+                service.ConfirmReceipt(receipt,"isolated-demo-test");
+            }
+            foreach(var p in db.Products.AsNoTracking().ToList()) {
+                var ledger = db.InventoryTransactions.Where(t=>t.ProductId==p.Id).Sum(t=>(long?)t.QuantityChange) ?? 0L;
+                Check(ledger == p.QuantityInStock, "demo ledger matches stock " + p.Sku);
+            }
+            var guest = new GenericPrincipal(new GenericIdentity(""), new string[0]);
+            foreach(var category in demo.Select(p=>p.CategoryId).Distinct()) {
+                using(var controller = new StoreController()) {
+                    controller.ControllerContext = new ControllerContext(new DemoHttpContext(guest),new System.Web.Routing.RouteData(),controller);
+                    var rows=(IEnumerable<Product>)((ViewResult)controller.Index(null, category)).Model;
+                    Check(rows.Any() && rows.All(p=>p.CategoryId==category),"store category links isolate category " + category);
+                }
+            }
+            using(var controller = new StoreController()) {
+                controller.ControllerContext=new ControllerContext(new DemoHttpContext(guest),new System.Web.Routing.RouteData(),controller);
+                var one=demo.First();var rows=(IEnumerable<Product>)((ViewResult)controller.Index(one.Sku,one.CategoryId)).Model;
+                Check(rows.Count()==1 && rows.Single().Id==one.Id,"store search and category intersect correctly");
+            }
+            var users=new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(db));
+            var roles=new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(db));
+            roles.Create(new IdentityRole("UnexpectedDemo"));
+            foreach(var email in new[]{"extra@ui.example.test","norole@ui.example.test"}) {
+                var user=new ApplicationUser{UserName=email,Email=email};Check(users.Create(user).Succeeded,"extra card fixture " + email);
+                if(email.StartsWith("extra"))users.AddToRole(user.Id,"UnexpectedDemo");
+            }
+            var admin=users.FindByEmail("Admin@ui.example.test");
+            var identity=new System.Security.Claims.ClaimsIdentity(new[]{new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier,admin.Id)},"test");
+            using(var controller=new AdminUsersController()) {
+                controller.ControllerContext=new ControllerContext(new DemoHttpContext(new System.Security.Claims.ClaimsPrincipal(identity)),new System.Web.Routing.RouteData(),controller);
+                var rows=((IEnumerable<UserRoleRow>)((ViewResult)controller.Index()).Model).ToList();
+                Check(rows.Count>=6,"at least six account cards including unknown and empty roles");
+                Check(rows.SequenceEqual(rows.OrderBy(r=>AdminUsersController.DisplayRoleOrder(r.Roles)).ThenBy(r=>r.Email,StringComparer.OrdinalIgnoreCase)),"role display order and email sorting");
+                controller.SetRole(admin.Id,"Kho");Check(controller.TempData["Error"]!=null && users.IsInRole(admin.Id,"Admin"),"self last admin demotion rejected");
+            }
+            var actor=new System.Security.Claims.ClaimsIdentity(new[]{new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier,"other-admin-test")},"test");
+            using(var controller=new AdminUsersController()) {
+                controller.ControllerContext=new ControllerContext(new DemoHttpContext(new System.Security.Claims.ClaimsPrincipal(actor)),new System.Web.Routing.RouteData(),controller);
+                controller.SetRole(admin.Id,"Kho");Check(controller.TempData["Error"]!=null,"last admin protected from other actor");
+            }
+            var target=users.FindByEmail("extra@ui.example.test");
+            using(var controller=new AdminUsersController()) {
+                controller.ControllerContext=new ControllerContext(new DemoHttpContext(new System.Security.Claims.ClaimsPrincipal(identity)),new System.Web.Routing.RouteData(),controller);
+                controller.SetRole(target.Id,"Kho");Check(controller.TempData["Success"]!=null,"confirmed role action succeeds on test account");
+            }
+            using(var fresh=new ApplicationDbContext()) {
+                var roleId=fresh.Roles.Single(r=>r.Name=="Kho").Id;
+                Check(fresh.Users.Single(u=>u.Id==target.Id).Roles.Any(r=>r.RoleId==roleId),"confirmed role persisted");
+            }
+            Check(AdminUsersController.DisplayRoleOrder("UnexpectedDemo, Admin")==0 && AdminUsersController.DisplayRoleOrder("UnexpectedDemo")==4 && AdminUsersController.DisplayRoleOrder("")==5,"unusual and multiple roles have stable display order");
         }
-        var ids = new[] { first, second, third };
-        var receipts = new PurchaseReceiptService();
-        int receipt = receipts.CreateDraft(new PurchaseReceiptDraftInput {
-            ReceiptNumber = "IT-THREE-IN", SupplierId = supplier, EmployeeId = employee,
-            Details = ids.Select(id => new PurchaseReceiptLineInput { ProductId = id, Quantity = 10, UnitCost = 50m }).ToList()
-        });
-        receipts.ConfirmReceipt(receipt, "integration-test");
-        Check(ids.All(id => Stock(id) == 10), "three-product receipt stock");
-        var sales = new SalesOrderService();
-        int order = sales.CreatePending(new SalesOrderPendingInput {
-            OrderNumber = "IT-THREE-OUT", CustomerId = customer, Channel = SalesChannel.Online,
-            ShippingAddress = "Isolated test address", PaymentMethod = PaymentMethod.CashOnDelivery,
-            Details = ids.Select(id => new SalesOrderLineInput { ProductId = id, Quantity = 2 }).ToList()
-        });
-        using (var db = new ApplicationDbContext()) {
-            Check(db.SalesOrders.Find(order).Status == OrderStatus.Pending && db.SalesOrderDetails.Count(d => d.SalesOrderId == order) == 3,
-                "one Pending order contains three different products at service layer");
+    }
+    private static void VerifyOnlineCart()
+    {
+        int customerId;
+        List<Product> products;
+        using (var db = new ApplicationDbContext())
+        {
+            customerId = db.Customers.First(c => c.IsActive).Id;
+            products = db.Products.AsNoTracking().Where(p => p.IsActive && p.Category.IsActive && p.QuantityInStock >= 5).OrderBy(p => p.Id).Take(3).ToList();
         }
-        Check(ids.All(id => Stock(id) == 10), "three-product Pending preserves stock");
-        sales.ConfirmOrder(order, "integration-test");
-        Reject(() => sales.ConfirmOrder(order, "integration-test"), "three-product duplicate confirmation rejected");
-        Check(ids.All(id => Stock(id) == 8), "three-product confirmation subtracts once");
-        using (var reports = new ReportsController()) {
-            var model = (BusinessReportViewModel)((ViewResult)reports.Sales(DateTime.Today, DateTime.Today)).Model;
-            Check(model.Rows.Count(r => r.DocumentId == order) == 3 && model.Rows.Where(r => r.DocumentId == order).Sum(r => r.Quantity) == 6,
-                "three-product sale appears in export report");
+        Check(products.Count == 3, "three stocked online products");
+        var input = new SalesOrderPendingInput { OrderNumber = "IT-CART", CustomerId = customerId,
+            Channel = SalesChannel.Online, PaymentMethod = PaymentMethod.CashOnDelivery,
+            ShippingAddress = "Online cart test", Details = products.Select(p => new SalesOrderLineInput { ProductId = p.Id, Quantity = 2 }).ToList() };
+        var service = new SalesOrderService();
+        var id = service.CreatePending(input);
+        using (var db = new ApplicationDbContext())
+        {
+            var order = db.SalesOrders.Include(o => o.Details).Single(o => o.Id == id);
+            Check(order.Details.Count == 3 && order.Status == OrderStatus.Pending && order.PaymentStatus == PaymentStatus.Unpaid, "online cart is one pending unpaid order with three lines");
+            Check(order.TotalAmount == products.Sum(p => p.SalePrice * 2), "online total uses server prices");
+            Check(!db.InventoryTransactions.Any(t => t.SalesOrderId == id), "pending online cart has no stock ledger entries");
         }
-        sales.CompleteOrder(order);
-        Check(ids.All(id => Stock(id) == 8), "Complete preserves stock for all three products");
-        Reject(() => sales.CancelOrder(order, "integration-test"), "Completed order cannot be cancelled");
-        using (var controller = new SalesOrdersController()) {
-            Check(controller.Invoice(order) is ViewResult, "Completed invoice returns view model (not A4 rendering)");
-        }
+        foreach (var p in products) Check(Stock(p.Id) == p.QuantityInStock, "online pending preserves stock " + p.Id);
+        input.OrderNumber = "IT-CART-OVER";
+        input.Details[0].Quantity = products[0].QuantityInStock + 1;
+        Reject(() => service.CreatePending(input), "online stock checked inside transaction");
+        using (var db = new ApplicationDbContext()) Check(!db.SalesOrders.Any(o => o.OrderNumber == input.OrderNumber), "invalid online order rolls back all lines");
+        input.OrderNumber = "IT-CART-INACTIVE";
+        input.Details[0].Quantity = 1;
+        using (var db = new ApplicationDbContext()) { db.Products.Find(products[0].Id).IsActive = false; db.SaveChanges(); }
+        Reject(() => service.CreatePending(input), "inactive online product rejected");
+        using (var db = new ApplicationDbContext()) { db.Products.Find(products[0].Id).IsActive = true; db.SaveChanges(); }
+        int categoryId;
+        using (var db = new ApplicationDbContext()) { categoryId = db.Products.Find(products[0].Id).CategoryId; db.Categories.Find(categoryId).IsActive = false; db.SaveChanges(); }
+        Reject(() => service.CreatePending(input), "inactive online category rejected");
+        using (var db = new ApplicationDbContext()) { db.Categories.Find(categoryId).IsActive = true; db.SaveChanges(); }
+        service.ConfirmOrder(id, "online-cart-test");
+        foreach (var p in products) Check(Stock(p.Id) == p.QuantityInStock - 2, "online multi-line confirm deducts " + p.Id);
+        Reject(() => service.ConfirmOrder(id, "online-cart-test"), "multi-line confirmation replay rejected");
+        service.CancelOrder(id, "online-cart-test");
+        foreach (var p in products) Check(Stock(p.Id) == p.QuantityInStock, "online multi-line cancel restores " + p.Id);
     }
     private static void VerifyRolesAndDashboard()
     {

@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -21,15 +21,49 @@ namespace OnlineSalesManagement.Controllers
             new PurchaseReceiptService();
 
         // GET: /PurchaseReceipts
-        public ActionResult Index()
+        public ActionResult Index(string keyword = null, ReceiptStatus? status = null,
+            int? supplierId = null, int? employeeId = null, bool? draftOnly = null, bool? confirmedOnly = null, string receiptNumber = null,
+            DateTime? fromDate = null, DateTime? toDate = null,
+            decimal? minTotal = null, decimal? maxTotal = null)
         {
-            var receipts = db.PurchaseReceipts
-                .Include(r => r.Supplier)
-                .Include(r => r.Employee)
-                .OrderByDescending(r => r.Id)
-                .ToList();
-
-            return View(receipts);
+            // Keep date parameters within SQL datetime's supported range before executing EF queries.
+            var firstDate = new DateTime(1753, 1, 1);
+            var lastDate = DateTime.MaxValue.Date.AddDays(-1);
+            if ((fromDate.HasValue && (fromDate.Value.Date < firstDate || fromDate.Value.Date > lastDate)) ||
+                (toDate.HasValue && (toDate.Value.Date < firstDate || toDate.Value.Date > lastDate)))
+                ModelState.AddModelError("", "Ngày lọc phải nằm trong khoảng 01/01/1753 đến 30/12/9999.");
+            if (fromDate.HasValue && toDate.HasValue && fromDate.Value.Date > toDate.Value.Date)
+                ModelState.AddModelError("", "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            if (minTotal < 0 || maxTotal < 0 || (minTotal.HasValue && maxTotal.HasValue && minTotal > maxTotal))
+                ModelState.AddModelError("", "Khoảng tổng tiền không hợp lệ. Vui lòng nhập số không âm, tối thiểu không lớn hơn tối đa.");
+            if (minTotal > 9999999999999999.99m || maxTotal > 9999999999999999.99m)
+                ModelState.AddModelError("", "Tổng tiền lọc vượt quá giới hạn hỗ trợ. Vui lòng nhập số nhỏ hơn 10.000.000.000.000.000.");
+            if (status.HasValue && !Enum.IsDefined(typeof(ReceiptStatus), status.Value))
+                ModelState.AddModelError("status", "Trạng thái không hợp lệ.");
+            var query = db.PurchaseReceipts.AsNoTracking().Include(x => x.Supplier).Include(x => x.Employee).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(x => x.ReceiptNumber.Contains(keyword) || x.Supplier.Name.Contains(keyword) || x.Note.Contains(keyword) || x.Employee.FullName.Contains(keyword));
+            }
+            if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+            if (fromDate.HasValue) { var start = fromDate.Value.Date; query = query.Where(x => x.ReceiptDate >= start); }
+            if (toDate.HasValue && toDate.Value.Date < DateTime.MaxValue.Date)
+            { var end = toDate.Value.Date.AddDays(1); query = query.Where(x => x.ReceiptDate < end); }
+            if (minTotal.HasValue) query = query.Where(x => x.TotalAmount >= minTotal.Value);
+            if (maxTotal.HasValue) query = query.Where(x => x.TotalAmount <= maxTotal.Value);
+            if (supplierId.HasValue) query = query.Where(x => x.SupplierId == supplierId.Value);
+            if (employeeId.HasValue) query = query.Where(x => x.EmployeeId == employeeId.Value);
+            if (draftOnly == true) query = query.Where(x => x.Status == ReceiptStatus.Draft);
+            if (confirmedOnly == true) query = query.Where(x => x.Status == ReceiptStatus.Confirmed);
+            if (draftOnly == true && confirmedOnly == true)
+                ModelState.AddModelError("", "Chỉ chọn một tùy chọn: Draft hoặc Confirmed.");
+            if (!string.IsNullOrWhiteSpace(receiptNumber)) { receiptNumber = receiptNumber.Trim(); query = query.Where(x => x.ReceiptNumber.Contains(receiptNumber)); }
+            ViewBag.SupplierOptions = new SelectList(db.Suppliers.AsNoTracking().OrderBy(x => x.Name).ToList(), "Id", "Name", supplierId);
+            ViewBag.EmployeeOptions = new SelectList(db.Employees.AsNoTracking().OrderBy(x => x.FullName).ToList(), "Id", "FullName", employeeId);
+            // Invalid filters must never silently display an unfiltered list.
+            if (!ModelState.IsValid) return View(new List<PurchaseReceipt>());
+            return View(query.OrderByDescending(x => x.Id).ToList());
         }
 
         // GET: /PurchaseReceipts/Details/5

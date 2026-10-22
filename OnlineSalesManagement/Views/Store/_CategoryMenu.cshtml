@@ -1,0 +1,29 @@
+﻿@using OnlineSalesManagement.Services
+@{
+    var categories = (IEnumerable<OnlineSalesManagement.Category>)ViewBag.StoreCategories;
+    var products = (IEnumerable<MenuProduct>)ViewBag.MenuProducts;
+}
+<aside class="store-category-menu" data-mega-menu aria-label="Danh mục sản phẩm">
+    <h2>Danh mục sản phẩm</h2>
+    <a class="store-category-all" href="@Url.Action("Index", "Store")">Xem toàn bộ sản phẩm →</a>
+    @foreach (var category in categories)
+    {
+        var suggestions = products.Where(p => p.CategoryId == category.Id).OrderBy(p => p.Name).Take(8).ToList();
+        <div class="store-category-item">
+            <button type="button" class="store-category-trigger" id="category-trigger-@category.Id" aria-expanded="false" aria-controls="category-panel-@category.Id"><span class="category-symbol" aria-hidden="true">▦</span><span>@category.Name</span><span class="category-arrow" aria-hidden="true">›</span></button>
+            <div class="store-mega-panel" id="category-panel-@category.Id" aria-labelledby="category-trigger-@category.Id" hidden>
+                <div class="mega-column"><h3>@category.Name</h3><p>Khám phá sản phẩm thuộc danh mục này.</p><a href="@Url.Action("Index", "Store", new { categoryId = category.Id })">Xem tất cả @category.Name →</a><small>Danh mục được lấy trực tiếp từ cửa hàng.</small></div>
+                @for (int group = 0; group < 2; group++)
+                {
+                    var items = suggestions.Skip(group * 4).Take(4).ToList();
+                    if (items.Any()) {
+                        <div class="mega-column"><h3>@(group == 0 ? "Gợi ý sản phẩm" : "Sản phẩm khác")</h3>
+                        @foreach (var item in items) { <a href="@Url.Action("Index", "Store", new { categoryId = category.Id, q = item.Sku })">@item.Name</a> }
+                        </div>
+                    }
+                }
+                @if (!suggestions.Any()) { <p class="text-muted">Danh mục hiện chưa có sản phẩm đang kinh doanh.</p> }
+            </div>
+        </div>
+    }
+</aside>

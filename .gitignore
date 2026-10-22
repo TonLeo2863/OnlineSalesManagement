@@ -361,3 +361,22 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Submission hygiene: machine state, build output, data and secrets
+.vs/
+**/[Bb]in/
+**/[Oo]bj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.bak
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+*.secrets.json
+**/serviceDependencies.local.json
+.aws/
+.codex/
+.agents/

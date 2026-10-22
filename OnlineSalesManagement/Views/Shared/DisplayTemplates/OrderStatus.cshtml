@@ -1,0 +1,12 @@
+@model OnlineSalesManagement.OrderStatus
+@{
+    string label;
+    switch (Model) {
+        case OnlineSalesManagement.OrderStatus.Pending: label = "Chờ xác nhận"; break;
+        case OnlineSalesManagement.OrderStatus.Confirmed: label = "Đã xác nhận"; break;
+        case OnlineSalesManagement.OrderStatus.Completed: label = "Đã hoàn tất"; break;
+        case OnlineSalesManagement.OrderStatus.Cancelled: label = "Đã hủy"; break;
+        default: label = "Chưa xác định"; break;
+    }
+}
+<span class="order-status status-@((int)Model)">@label</span>

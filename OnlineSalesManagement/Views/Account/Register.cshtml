@@ -1,43 +1,12 @@
 ﻿@model OnlineSalesManagement.Models.RegisterViewModel
-@{
-    ViewBag.Title = "Register";
+@{ ViewBag.Title = "Đăng ký"; }
+<section class="shop-panel shop-auth" aria-labelledby="register-title"><span class="shop-eyebrow">Bắt đầu cùng OSshop</span><h1 id="register-title" class="mt-2">Tạo tài khoản</h1><p class="auth-intro">Mua sắm thuận tiện và quản lý đơn hàng của riêng bạn.</p>
+@using (Html.BeginForm("Register", "Account", FormMethod.Post, new { role = "form" })) {
+    @Html.AntiForgeryToken() @Html.ValidationSummary("", new { @class = "text-danger", role = "alert" })
+    <div class="mb-3"><label class="form-label" for="Email">Email</label>@Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", autocomplete = "username", required = "required" })</div>
+    <div class="mb-3"><label class="form-label" for="Password">Mật khẩu</label>@Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password", required = "required", aria_describedby = "passwordHint" })<p id="passwordHint" class="small text-muted mt-2">Ít nhất 6 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</p></div>
+    <div class="mb-4"><label class="form-label" for="ConfirmPassword">Nhập lại mật khẩu</label>@Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control", autocomplete = "new-password", required = "required" })</div>
+    <button type="submit" class="btn btn-primary w-100">Đăng ký tài khoản</button><p class="auth-footer">Đã có tài khoản? @Html.ActionLink("Đăng nhập", "Login")</p>
 }
-
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
-
-    @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { role = "form" }))
-    {
-        @Html.AntiForgeryToken()
-        <h4>Create a new account.</h4>
-        <hr />
-        @Html.ValidationSummary("", new { @class = "text-danger" })
-        <div class="row">
-            @Html.LabelFor(m => m.Email, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
-            </div>
-        </div>
-        <div class="row">
-            @Html.LabelFor(m => m.Password, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
-            </div>
-        </div>
-        <div class="row">
-            @Html.LabelFor(m => m.ConfirmPassword, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
-            </div>
-        </div>
-        <div class="row">
-            <div class="offset-md-2 col-md-10">
-                <input type="submit" value="Register" class="btn btn-outline-dark" />
-            </div>
-        </div>
-    }
-</main>
-
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
+</section>
+@section Scripts { @Scripts.Render("~/bundles/jqueryval") }

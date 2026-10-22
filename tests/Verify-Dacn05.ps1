@@ -6,13 +6,13 @@ $solutionPath = Join-Path $repositoryRoot 'OnlineSalesManagement.sln'
 $resultDirectory = Join-Path $repositoryRoot 'artifacts\verification'
 [void][IO.Directory]::CreateDirectory($resultDirectory)
 $resultPath = Join-Path $resultDirectory ('verify-' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fff') + '.json')
-$result = [ordered]@{ StartedUtc = [DateTime]::UtcNow.ToString('o'); Status = 'Running'; Build = 'NotRun'; Smoke = 'NotRun'; Integration = 'NotRun'; SourceStable = $false }
+$result = [ordered]@{ StartedUtc = [DateTime]::UtcNow.ToString('o'); Status = 'Running'; Build = 'NotRun'; Smoke = 'NotRun'; JavaScript = 'NotRun'; Integration = 'NotRun'; SourceStable = $false }
 $stage = 'LocateMSBuild'
 
 function Get-SourceSnapshot {
     $files = foreach ($directory in @('OnlineSalesManagement', 'tests')) {
         Get-ChildItem -LiteralPath (Join-Path $repositoryRoot $directory) -File -Recurse |
-            Where-Object { $_.FullName.Replace([char]92, [char]47) -notmatch '/(bin|obj|packages|[.]vs)/' -and $_.Extension -in @('.cs','.cshtml','.csproj','.config','.ps1','.mjs') }
+            Where-Object { $_.FullName.Replace([char]92, [char]47) -notmatch '/(bin|obj|packages|[.]vs)/' -and $_.Extension -in @('.cs','.cshtml','.csproj','.config','.ps1','.mjs','.js','.css','.svg') }
     }
     @($files | Sort-Object FullName | ForEach-Object {
         [pscustomobject]@{ Path = $_.FullName.Substring($repositoryRoot.Length + 1); SHA256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
@@ -38,6 +38,14 @@ try {
     $stage = 'Smoke'
     & (Join-Path $PSScriptRoot 'Run-SmokeTests.ps1')
     $result.Smoke = 'Passed'
+    if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'CustomerUi.Tests.mjs')) {
+        $stage = 'JavaScript'
+        & node --check (Join-Path $repositoryRoot 'OnlineSalesManagement\Scripts\customer.js')
+        if ($LASTEXITCODE -ne 0) { throw 'Customer JavaScript syntax check failed' }
+        & node --test (Join-Path $PSScriptRoot 'CustomerUi.Tests.mjs')
+        if ($LASTEXITCODE -ne 0) { throw 'Customer JavaScript behavior tests failed' }
+        $result.JavaScript = 'Passed'
+    }
     if ($IncludeIntegration) {
         $stage = 'Integration'
         & (Join-Path $PSScriptRoot 'Run-IntegrationTests.ps1')
@@ -52,7 +60,7 @@ try {
 } catch {
     $result.Status = 'Failed'
     $result['FailureStage'] = $stage
-    if ($stage -in @('Build','Smoke','Integration')) { $result[$stage] = 'Failed' }
+    if ($stage -in @('Build','Smoke','JavaScript','Integration')) { $result[$stage] = 'Failed' }
     throw
 } finally {
     $result['FinishedUtc'] = [DateTime]::UtcNow.ToString('o')

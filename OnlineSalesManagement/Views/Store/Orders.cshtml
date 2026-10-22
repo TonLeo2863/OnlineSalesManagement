@@ -1,6 +1,9 @@
-@model IEnumerable<OnlineSalesManagement.SalesOrder>
-@{ ViewBag.Title = "Đơn của tôi"; }
-<h2>Đơn của tôi</h2><p>@Html.ActionLink("Tiếp tục mua", "Index")</p>
-<div class="table-responsive"><table class="table"><thead><tr><th>Số đơn</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng thanh toán</th></tr></thead><tbody>
-@foreach (var item in Model) { <tr><td>@Html.ActionLink(item.OrderNumber, "Details", new { id = item.Id })</td><td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td><td>@Html.DisplayFor(m => item.Status)</td><td>@item.TotalAmount.ToString("N0") đ</td></tr> }
-</tbody></table></div>
+﻿@model IEnumerable<OnlineSalesManagement.SalesOrder>
+@{ ViewBag.Title = "Đơn hàng của tôi"; }
+<div class="section-heading"><div><span class="shop-eyebrow">Tài khoản của bạn</span><h1>Đơn hàng của tôi</h1><p>Theo dõi hành trình của mỗi đơn hàng.</p></div><a href="@Url.Action("Index")">Tiếp tục mua sắm →</a></div>
+@if (!Model.Any()) { <section class="empty-state"><h2 class="h4">Bạn chưa có đơn hàng nào</h2><p>Khám phá cửa hàng và chọn những sản phẩm yêu thích.</p><a class="btn btn-primary" href="@Url.Action("Index")">Bắt đầu mua sắm</a></section> }
+else {
+<div class="shop-panel orders-panel"><div class="table-responsive"><table class="table shop-orders align-middle"><thead><tr><th scope="col">Mã đơn hàng</th><th scope="col">Ngày đặt</th><th scope="col">Trạng thái</th><th scope="col">Tổng thanh toán</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>
+@foreach (var item in Model) { <tr><td><strong>@item.OrderNumber</strong></td><td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td><td>@Html.DisplayFor(m => item.Status, "OrderStatus")</td><td class="order-amount">@item.TotalAmount.ToString("N0") ₫</td><td><a class="btn btn-outline-primary btn-sm" href="@Url.Action("Details", new { id = item.Id })" aria-label="Xem chi tiết đơn @item.OrderNumber">Xem chi tiết</a></td></tr> }
+</tbody></table></div></div>
+}

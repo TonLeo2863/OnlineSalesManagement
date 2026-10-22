@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -20,13 +20,20 @@ namespace OnlineSalesManagement.Controllers
     {
         public static readonly string[] AllowedRoles = { "Admin", "Kho", "BanHang", "KhachHang" };
         private readonly ApplicationDbContext db = new ApplicationDbContext();
+        // Display ordering only; authorization continues to use Identity roles.
+        public static int DisplayRoleOrder(string roles)
+        {
+            var current = (roles ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(r => r.Trim()).ToArray();
+            for (int i = 0; i < AllowedRoles.Length; i++) if (current.Contains(AllowedRoles[i], StringComparer.OrdinalIgnoreCase)) return i;
+            return current.Length == 0 ? 5 : 4;
+        }
         public ActionResult Index()
         {
             var names = db.Roles.ToDictionary(r => r.Id, r => r.Name);
             var rows = db.Users.ToList().Select(u => new UserRoleRow {
-                Id = u.Id, Email = u.Email,
-                Roles = string.Join(", ", u.Roles.Select(r => names[r.RoleId]))
-            }).ToList();
+                Id = u.Id, Email = string.IsNullOrWhiteSpace(u.Email) ? u.UserName : u.Email,
+                Roles = string.Join(", ", u.Roles.Select(r => names.ContainsKey(r.RoleId) ? names[r.RoleId] : "Vai trò không xác định"))
+            }).OrderBy(r => DisplayRoleOrder(r.Roles)).ThenBy(r => r.Email, StringComparer.OrdinalIgnoreCase).ToList();
             return View(rows);
         }
         [HttpPost, ValidateAntiForgeryToken]

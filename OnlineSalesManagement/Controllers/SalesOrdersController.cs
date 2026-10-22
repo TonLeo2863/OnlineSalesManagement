@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -21,15 +21,50 @@ namespace OnlineSalesManagement.Controllers
             new SalesOrderService();
 
         // GET: /SalesOrders
-        public ActionResult Index()
+        public ActionResult Index(string keyword = null, OrderStatus? status = null,
+            int? customerId = null, SalesChannel? channel = null,
+            DateTime? fromDate = null, DateTime? toDate = null,
+            decimal? minTotal = null, decimal? maxTotal = null, string orderNumber = null)
         {
-            var orders = db.SalesOrders
-                .Include(o => o.Customer)
-                .Include(o => o.Employee)
-                .OrderByDescending(o => o.Id)
-                .ToList();
-
-            return View(orders);
+            // Keep date parameters within SQL datetime's supported range before executing EF queries.
+            var firstDate = new DateTime(1753, 1, 1);
+            var lastDate = DateTime.MaxValue.Date.AddDays(-1);
+            if ((fromDate.HasValue && (fromDate.Value.Date < firstDate || fromDate.Value.Date > lastDate)) ||
+                (toDate.HasValue && (toDate.Value.Date < firstDate || toDate.Value.Date > lastDate)))
+                ModelState.AddModelError("", "Ngày lọc phải nằm trong khoảng 01/01/1753 đến 30/12/9999.");
+            if (fromDate.HasValue && toDate.HasValue && fromDate.Value.Date > toDate.Value.Date)
+                ModelState.AddModelError("", "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            if (minTotal < 0 || maxTotal < 0 || (minTotal.HasValue && maxTotal.HasValue && minTotal > maxTotal))
+                ModelState.AddModelError("", "Khoảng tổng tiền không hợp lệ. Vui lòng nhập số không âm, tối thiểu không lớn hơn tối đa.");
+            if (minTotal > 9999999999999999.99m || maxTotal > 9999999999999999.99m)
+                ModelState.AddModelError("", "Tổng tiền lọc vượt quá giới hạn hỗ trợ. Vui lòng nhập số nhỏ hơn 10.000.000.000.000.000.");
+            if (status.HasValue && !Enum.IsDefined(typeof(OrderStatus), status.Value))
+                ModelState.AddModelError("status", "Trạng thái không hợp lệ.");
+            var query = db.SalesOrders.AsNoTracking().Include(x => x.Customer).Include(x => x.Employee).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(x => x.OrderNumber.Contains(keyword) || x.Customer.FullName.Contains(keyword) || x.Note.Contains(keyword));
+            }
+            if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+            if (fromDate.HasValue) { var start = fromDate.Value.Date; query = query.Where(x => x.OrderDate >= start); }
+            if (toDate.HasValue && toDate.Value.Date < DateTime.MaxValue.Date)
+            { var end = toDate.Value.Date.AddDays(1); query = query.Where(x => x.OrderDate < end); }
+            if (minTotal.HasValue) query = query.Where(x => x.TotalAmount >= minTotal.Value);
+            if (maxTotal.HasValue) query = query.Where(x => x.TotalAmount <= maxTotal.Value);
+            if (!string.IsNullOrWhiteSpace(orderNumber))
+            {
+                orderNumber = orderNumber.Trim();
+                query = query.Where(x => x.OrderNumber.Contains(orderNumber));
+            }
+            if (customerId.HasValue) query = query.Where(x => x.CustomerId == customerId.Value);
+            if (channel.HasValue && !Enum.IsDefined(typeof(SalesChannel), channel.Value))
+                ModelState.AddModelError("channel", "Kênh bán không hợp lệ.");
+            if (channel.HasValue) query = query.Where(x => x.Channel == channel.Value);
+            ViewBag.CustomerOptions = new SelectList(db.Customers.AsNoTracking().OrderBy(x => x.FullName).ToList(), "Id", "FullName", customerId);
+            // Invalid filters must never silently display an unfiltered list.
+            if (!ModelState.IsValid) return View(new List<SalesOrder>());
+            return View(query.OrderByDescending(x => x.Id).ToList());
         }
 
         // GET: /SalesOrders/Details/5
