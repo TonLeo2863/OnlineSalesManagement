@@ -26,3 +26,12 @@ Chốt Git: code ứng dụng được đối chiếu theo nội dung chuẩn h�
 Commit remote ae139f1bc7e71e70fd313c75eb0df8bb9c83f3c8 chỉ bổ sung test/tài liệu cũ. Lịch sử và các file riêng của commit này được giữ; IntegrationTests.cs và Run-UiTests.ps1 dùng phiên bản workspace mới đã chạy 230/292 ca, thay thế kỳ vọng checkout một sản phẩm cũ. Các ghi chép Chrome/PDF ngày 21/10 trong tài liệu cũ không chứng nhận UI mới.
 
 Log/manifest đầy đủ và bản sao site/token/config thử được giữ cục bộ trong artifacts, không đưa lên GitHub hay gói source. Không chứa database, mật khẩu, bin/obj, packages hoặc browser profile.
+
+## Commit chốt và kiểm tra bản xuất sạch
+
+- Commit code đã chốt: **5126e1f62bc90c5f86a63861668148b62e506fe0**.
+- 212 file ứng dụng (bao gồm Razor config) được đối chiếu với source đã kiểm thử, chỉ chuẩn hóa xuống dòng. Root Web.config dùng DefaultConnection portable; .csproj.user và serviceDependencies.local.json không được đóng gói.
+- Cây source xuất từ index của commit code được Rebuild Debug + MvcBuildViews=true: **PASS**. 61 smoke trên chính bản xuất: **PASS**. Build dùng NuGet packages đã có qua junction tạm ở thư mục kiểm chứng; không khẳng định đã Restore NuGet trên máy sạch.
+- Không chạy lại integration/HTTP trên SQL template portable hoặc máy nhận; các kết quả 230/292 nêu trên thuộc cùng code ứng dụng với cấu hình SQL thử đã được ghi trong manifest. Không tuyên bố hai môi trường có cùng fingerprint thô.
+- Commit tài liệu bàn giao tiếp theo chỉ thay docs, giữ nguyên tree của OnlineSalesManagement và tests so với commit code này. Dùng git rev-parse HEAD ở bản GitHub để lấy commit đầu nhánh cuối cùng.
+- Gói nộp là git archive của HEAD cuối, không chứa .git, packages, bin/obj, database/backup, artifacts hoặc cấu hình SQL cá nhân. Thư mục workspace vẫn giữ Web.config local nên không dùng nguyên workspace để nén.

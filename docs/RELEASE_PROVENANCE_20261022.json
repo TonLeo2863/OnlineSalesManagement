@@ -1,0 +1,871 @@
+{
+  "CodeCommit": "5126e1f62bc90c5f86a63861668148b62e506fe0",
+  "RecordedAt": "2026-10-22T10:36:18.872648+07:00",
+  "TestedBaseCommit": "58b2d5183847583dae5f9b44f00be1727f2a1958",
+  "TestedWorktreeFingerprint": "78a4b4eb549631008103d19096f954a169a871c3a90b4718b936f903d6f08450",
+  "MatchedApplicationFiles": 212,
+  "Normalization": "CRLF to LF only",
+  "ReleaseExceptions": [
+    "Portable root DefaultConnection",
+    "Exclude .csproj.user and serviceDependencies.local.json"
+  ],
+  "PortableBuildRazor": "PASS",
+  "PortableSmoke": 61,
+  "Integration": 230,
+  "HTTP": 292,
+  "JavaScript": 38,
+  "ReportAggregate": 14,
+  "IdentityReset": 19,
+  "ChromeUI": "NOT TESTED",
+  "VisualPrintPreview": "NOT TESTED",
+  "ApplicationFiles": [
+    {
+      "Path": "OnlineSalesManagement/App_Start/BundleConfig.cs",
+      "SHA256": "d7accd12c0cd5591529190223478fa091004b8cf779ad91fe0aef3a8efd2043d"
+    },
+    {
+      "Path": "OnlineSalesManagement/App_Start/FilterConfig.cs",
+      "SHA256": "2448d14710c6989dd65901f3299e11d897300f80eef3c62907b425d620838879"
+    },
+    {
+      "Path": "OnlineSalesManagement/App_Start/IdentityConfig.cs",
+      "SHA256": "e11e99389aa370100acab34a5007d99715b69e7616fbaab4df66fb98cea9ad02"
+    },
+    {
+      "Path": "OnlineSalesManagement/App_Start/RouteConfig.cs",
+      "SHA256": "575eed189316c479a9d04f95b9faaa7d461c8a23feee6a27595d96a8bfa7cacc"
+    },
+    {
+      "Path": "OnlineSalesManagement/App_Start/Startup.Auth.cs",
+      "SHA256": "d9cfe54bf519ea89b1f39d66243a67eef76f6e1dbb10241f7d45f96c3170f993"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/Site.css",
+      "SHA256": "372af836da6a1a34f6db50a2cf660ce920609ffc09f3e460eff4f7453581d5ce"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/admin.css",
+      "SHA256": "03f47a225b663609fd2d03b525a8a69ac3fbcc31ed4d16f6b703818b804e38ae"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.css",
+      "SHA256": "740d2c30c6ab1fa7fd9d79a81bc9f652d4cf81d30bf8540421069f7407649a36"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.css.map",
+      "SHA256": "cf96f82555060f2bb084080ec9e34cf3ecf34c054883dd8369addaac2b78fe3a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.min.css",
+      "SHA256": "ef08436834c21d75e7a272480f9589d0cd4817e1e3ed7eecff4c1eaa6dc4e30f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.min.css.map",
+      "SHA256": "916483494fcb5fd6dc780144fb380392488a45f2d809fb32a0a301777c8b36e1"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.rtl.css",
+      "SHA256": "400dc8d301951207564dece1d4bcbc46439439212ebacf3baa4039f9a93cc7ac"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.rtl.css.map",
+      "SHA256": "c02ddbc77faa62151bb95da1803294eb0bd5cb7c234447f46822e59697e33e55"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.rtl.min.css",
+      "SHA256": "8b0f2c37be919d559d9238c169ca341976b8980181160370ad291477b714e66d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-grid.rtl.min.css.map",
+      "SHA256": "808fcbb2d912ee01e155f96f2ef8663414dfb266cf0d94b0e8230758f5f6feed"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.css",
+      "SHA256": "de3d850307386a5484f7bb1e5a3ae710cd2bc717044dac18024aab8ac09376a3"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.css.map",
+      "SHA256": "ef63be161d8f9cf4e52225f53950be963e913e100c3783e79c2d448d0c688da6"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.min.css",
+      "SHA256": "27657a197e7882be419660ca00985d301ffbe085787cd42692fba7cffbbf808b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.min.css.map",
+      "SHA256": "c65a5f1c1b7794986052fdb923d0b65921e8e4e7bf69d62f5042d4f7264f815b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.rtl.css",
+      "SHA256": "0882b01a80663271a894c902dba221d7e385e9392bb58f34eb99a9b7c7ee6077"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.rtl.css.map",
+      "SHA256": "5fd74cee73db3d9dfff0544f9f1a411cb6d50279b3bb4b38319bcf4d843358b6"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.rtl.min.css",
+      "SHA256": "48a1ee97539e56557d948841443bc44f80b8c9304f276ad66496295d4db7414f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-reboot.rtl.min.css.map",
+      "SHA256": "163e0314a19b320652c97882130dc851dfdbb62c24445b34b6c3a82d651bc356"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.css",
+      "SHA256": "765bdec45d5091de4080d31934d79e2d384ab65c8ad22c19cdc9d551abd3e1d8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.css.map",
+      "SHA256": "ef206477fb3a048a540254c44db36cc8d41a6192cb188ecbe9281e5559a8dd34"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.min.css",
+      "SHA256": "294fbe577db1b30e931f51ae2f4a3b4fd0892e25b2ea713677ea9792e2cfb252"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.min.css.map",
+      "SHA256": "d52866ed1d78a10c30895d50b035a6fbba04f1091867a3def5aaf12bc15f9fa8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.rtl.css",
+      "SHA256": "1336a4074a2fe973e86ddb7c43729d33ecfb47cfa03f7e5cf302a809aae429a2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.rtl.css.map",
+      "SHA256": "93b84f10f452d7be5e123498d8d8a9a739b5bef6561bc1a167746f7bfaf9192d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.rtl.min.css",
+      "SHA256": "ec663c98b84b22c83d5d3ecabad74da477d52a778019f97a612518d220f28fa7"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap-utilities.rtl.min.css.map",
+      "SHA256": "67ba576ebd68a49c5770fd56eea254cde67a76400fa169d079c6119cd36ced02"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.css",
+      "SHA256": "22b464461c1d3b621c3f6fb5b678b6531ab0a704d0e1bd078ddd371b87473db0"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.css.map",
+      "SHA256": "ae5430d563ba9975d8543cfb00650e283b18c19c9603461a8460f2372af03f21"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.min.css",
+      "SHA256": "c0bcf7898fdc3b87babca678cd19a8e3ef570e931c80a3afbffcc453738c951a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.min.css.map",
+      "SHA256": "ff724ca73ac50a9391851129cd451c98e8c3015a28ff851f97dad247b052a577"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.rtl.css",
+      "SHA256": "57bfa5bcd80da145cc697f382fcda877ebd83bdcbd1cb2d54c5b35fe720e6b08"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.rtl.css.map",
+      "SHA256": "70c410becfefa678a18db0336a6f36c62483a0cb3453f87106cfc41ad929b396"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.rtl.min.css",
+      "SHA256": "f9b340a2516fb7a601d8b81774440984a414c384f45dbac1c4b7f4947e0d603a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/bootstrap.rtl.min.css.map",
+      "SHA256": "8fa1eda2417716efb0cda572eb096059a70255019f730a132fa9413b2512fe4e"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/customer.css",
+      "SHA256": "b5eae0005d4fdd4ea5678863b0124065f224de17bd018fb548e395968f86786f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Content/product-placeholder.svg",
+      "SHA256": "78f7d7b0be83087e4029a0febabc09e1e0c1b4f841a809f3729374197b2ee8a4"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/AccountController.cs",
+      "SHA256": "e3dac902d88e8adb7005ed89b0259581fa7aa7bb78d4e8438827866ba2b09d50"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/AdminUsersController.cs",
+      "SHA256": "b7c1db3cf14b850ace012eeaa45ab937dd9265dbaea387bb7ada5498a1cab51a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/CategoriesController.cs",
+      "SHA256": "ccd865483aa3ffb9461b23008228d965c5c490a1a7facdfc7c54ad8f04eb8a3a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/CustomersController.cs",
+      "SHA256": "43a3adf4c2624573cadc71e2b9100c5fa899928ff8c0ab679e8cfe07c761e8ba"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/EmployeesController.cs",
+      "SHA256": "004a6d1e124ba824307de3d756c17aecdf1b17b5db2051fda956b76b477ddade"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/HomeController.cs",
+      "SHA256": "54c1e485d1b6192b833b0e56cdc260858eb7c7529386b392ce66a28f53ba6a02"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/InventoryReportsController.cs",
+      "SHA256": "b4c599b48424df586a64f714250db5aa42bc8b2f05797ab302f05c38d2d153cc"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/ManageController.cs",
+      "SHA256": "bd7094ba19629a51d15b81794a69a08ec5a6572b84f4ea9d00a1b5157a0b0897"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/ProductsController.cs",
+      "SHA256": "8b26e779c7eeb79d248d96fc30593faa9bf0774416d05d0bfe0e98ea6260798e"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/PurchaseReceiptsController.cs",
+      "SHA256": "e5b7c605987f6dac7f34424ae31b4b3e9c3d995972fe8478423e852bc6ee52e8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/ReportsController.cs",
+      "SHA256": "e691919aedac0e48fac71322d7ecc276cd42c35dba4dfdf2973c910f409c3056"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/SalesOrdersController.cs",
+      "SHA256": "2a1390433e57426d48fda8235fd796a706de3e75e76f6fd2daef31caf657f44b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/StoreController.cs",
+      "SHA256": "5f99102b5ddbf4de3931da195a3eee2c3560b9679dcef3ca3e1caea19679b0ae"
+    },
+    {
+      "Path": "OnlineSalesManagement/Controllers/SuppliersController.cs",
+      "SHA256": "098a8e4e906bc0e4de16d7f9cc684c74d179aa856c947361dca6a793320b02ea"
+    },
+    {
+      "Path": "OnlineSalesManagement/Global.asax",
+      "SHA256": "4f89548c220c0dd814fb6c8bf4f2a266bc2b18babc6e704e161c1810b8bfc3d0"
+    },
+    {
+      "Path": "OnlineSalesManagement/Global.asax.cs",
+      "SHA256": "ad5456e9400831221f4a5b40f455dec219b65a04479d8e62cb47f0984ea2c235"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610131032209_InitialCreate.Designer.cs",
+      "SHA256": "f52e8fc7d64bdace7c1719e578a68cfe15f42d0db62e852ff813d27975a4c44e"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610131032209_InitialCreate.cs",
+      "SHA256": "f354951f122bd6cab2d0ef283bfbbac5ae96e62e86a2133d6df2443da0e4f99a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610131032209_InitialCreate.resx",
+      "SHA256": "da4492ea2c4147b6f9065c0010581968347af5d37ff7a59181abf64dab832a14"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610151148216_AddShiftManagementTables.Designer.cs",
+      "SHA256": "65fa7b5fa391a99ba933dab3631f1bf07f96a73c3070823d5dd824e1fb85d568"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610151148216_AddShiftManagementTables.cs",
+      "SHA256": "277326ab611d38dd48de768e2c8800f254c18f9b7e98906ceb5d16806c2e6ed5"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/202610151148216_AddShiftManagementTables.resx",
+      "SHA256": "819bfe99a1b3c371c2249f393a5a631ade60f73862816b700f1c538a11e5f7a2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Migrations/Configuration.cs",
+      "SHA256": "c68b37b6a2404c55605dcbcb8d658fcd0bda73dd88ec9cf0e31ff4af86a1cbc7"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/AccountViewModels.cs",
+      "SHA256": "be5a773a4c9a1b042c2b3fb4fc1558b05314aa053228666564704ca1ecca4ddf"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Category.cs",
+      "SHA256": "9232923478b2eb7fe4b72c48cab69cc44864dea3a2bc736d53b6b39300d65040"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Customer.cs",
+      "SHA256": "44fd3fca2bdfaa55fb3c7d263f95688942f6a87531fdababaf7f796c849cb68f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Employee.cs",
+      "SHA256": "b0f7d0368f0dd9415fb19504c5937d8b34ab3759be78c80c85b9e26a4f1a1dbe"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Enums.cs",
+      "SHA256": "c1843928c1c59095f03d47dbc0c10e1471b076624b9360e3087f1942bc2f6e9d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/IdentityModels.cs",
+      "SHA256": "e969cce038d2636c6ad96f63fbd1bc290990eace3e0f8a2df161197bb7df203d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/InventoryShiftAuditLog.cs",
+      "SHA256": "37cc69728aaa14cb1aa58b462face4bef31e99a95e49a56e3c8d6481c2068a38"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/InventoryShiftOpeningStock.cs",
+      "SHA256": "fe344e544411a3d6ccdd58d176b50cc55022f1bdaa967cfd55806fc48921eab4"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/InventoryShiftSnapshot.cs",
+      "SHA256": "21982e323d0ec2e2cdf0000db3b925013d727693c8f21f7bbd9099d9a601ff05"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/InventoryShiftSnapshotDetail.cs",
+      "SHA256": "be8ff151a8bf91d8cfc3be5af968016068d6297db56abaf22f23d84ab87bd541"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/InventoryTransaction.cs",
+      "SHA256": "8312f4150bc67431f15ff2e1bb5f45b2b7d72cec6de7fe70d59a65bac4a4c860"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/ManageViewModels.cs",
+      "SHA256": "22dbb540e078caad7762968312a5ec371ea91ba14b8dfb67557b15a1521586a3"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/ModelLimits.cs",
+      "SHA256": "aaf7ca641118a69d581dea9f2441449a005bf9c9beb8fe23ac3d705267ded7b2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/OnlineSalesModelConfiguration.cs",
+      "SHA256": "b897afb3241a1b433dc560e4c1bafe6b8b384cedaeb6a7f2150f1f35e0466123"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Product.cs",
+      "SHA256": "57a30c833e77e4c5bee6dd77b2cba4f23d75e1029a0cdd1b9f4bda2c21296b46"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/PurchaseReceipt.cs",
+      "SHA256": "792db3813f6bee55fef343a965e08e52a1623a22d436280458d3ca7569a2eaf7"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/PurchaseReceiptDetail.cs",
+      "SHA256": "c940729429dee6117ffbc953aa57079a5566dc8bfa149c271a8e92e0324243a9"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/SalesOrder.cs",
+      "SHA256": "30aed82a341cce59090acdfbef081cc163d6f65889683b2ab2d53f9575e4341b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/SalesOrderDetail.cs",
+      "SHA256": "d2cc22a26d92ccab3ffce27e2237a96f08926733224e535a0b88a650e81b0f9b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/SampleDataSeeder.cs",
+      "SHA256": "19e5ad4dcc6ace6aa35c9107b269e7eb4343f866ad9b52ec9540b3e5aa431d28"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/ShiftTemplate.cs",
+      "SHA256": "245ec0f2702b5c8ac9f8d1b3629384a1026669855cc7186db43bea9dc7f79d9e"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/Supplier.cs",
+      "SHA256": "9c18b5a9e17d36c08ec1b0affe02cfc66a756bef56d10d98bb601e77b286df48"
+    },
+    {
+      "Path": "OnlineSalesManagement/Models/WorkShift.cs",
+      "SHA256": "390332ed8eee3f94a42a31fd99901a16da460012f530738c79b0593b9e06f0bd"
+    },
+    {
+      "Path": "OnlineSalesManagement/OnlineSalesManagement.csproj",
+      "SHA256": "bc99974b8c1a00371152b8bd1c2efcd6fafa3f2bace63bf46d128a44dbefb1f7"
+    },
+    {
+      "Path": "OnlineSalesManagement/Properties/AssemblyInfo.cs",
+      "SHA256": "d9c51483b753a62b425931d4605208192b432ad47021cbef9352b82d3f33b10d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Properties/serviceDependencies.json",
+      "SHA256": "3a29f51f9f2ade03c2b3a8feaed2f1eb3b2ebb5f5008a30377578174acf9446c"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.bundle.js",
+      "SHA256": "48861b2e0f0ac9bd765bc460c53ef3c0d01e50c7eb7e57755e929b73fd10d611"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.bundle.js.map",
+      "SHA256": "9ede9d33f8ac97b6e37acb2e1dd915f4f5389728036ddb09bb70653de45bc80b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.bundle.min.js",
+      "SHA256": "9520018fa5d81f4e4dc9d06afb576f90cbbaba209cfcc6cb60e1464647f7890b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.bundle.min.js.map",
+      "SHA256": "1921fd9d018340d87d0f69ce46f68a52ea25cf99fe96b98e1de74cfcff96559c"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.esm.js",
+      "SHA256": "6efa2db2859bfb0e74dea0327b58697319f8680c42ae39d4b9d4f7917759075e"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.esm.js.map",
+      "SHA256": "20f54cc835a84d3fb0cb1316ab265c02d07209d498b623d9847d2506b6c28cfe"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.esm.min.js",
+      "SHA256": "323c2818184b8ea6e06b0ddcc986818a08e71ec46b2daf33cb0f6faf4ef190a6"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.esm.min.js.map",
+      "SHA256": "0c0c1495c71216d503a6909b2f14d5acc147afec7482cd212ec8a022cfc14ce2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.js",
+      "SHA256": "4ea6de9832c8e17c55a323a97dfbfe1532f9a0f9e74f46bfa962c9cb6fc035e8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.js.map",
+      "SHA256": "e0fcd2fa3a0e8ee661dcf986bb9dc2d21c3edb637ac8cf0c2287c55ec31e62fa"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.min.js",
+      "SHA256": "9bcd4d0f29dc6556ebeeff44eaa0965f0c7f7308ee58394708cce2f698cca1b0"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/bootstrap.min.js.map",
+      "SHA256": "973689199c4c7417a62153086e699c22e26c5ac1febaf7115cedab8f42230e17"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/customer.js",
+      "SHA256": "c2249e930ee29b444dfa2d79ac6381e0bdeba2a81df47b3194b37e6895851b32"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.intellisense.js",
+      "SHA256": "cd0a557e0e26acb25fa66328161fcc8874dbd462b3d99eed7bc623fb49f4e266"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.js",
+      "SHA256": "265a924c42de4784cba8fd0e1bd77133bc833ea5f5a31fc77e08922c18fcfa43"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.min.js",
+      "SHA256": "d8f9afbf492e4c139e9d2bcb9ba6ef7c14921eb509fb703bc7a3f911b774eff8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.min.map",
+      "SHA256": "cae47e834ee977975a48c851b165cc52ea916cc968ba7d280b1293f573cd1a48"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.slim.js",
+      "SHA256": "ec63be8dea53f6025ef4b0785c57fcb2754e8d7de260d6f414762be4b2353797"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.slim.min.js",
+      "SHA256": "b46e6671952d26c66fc8a03160b557ae68ca0552dde95a5571cab3febe32a451"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery-3.7.0.slim.min.map",
+      "SHA256": "d77da130569cef13eeb643b28c5f4a9aa70aa7c8021b355816e972c043c46942"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery.validate-vsdoc.js",
+      "SHA256": "5ad25dc3074c44133aa6373a75a73f34c96b0fe42ed32214972de6783fde070b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery.validate.js",
+      "SHA256": "9b497cd560cf886ec2706ec20ec4ee673bdc1afc859ab418e432c8c71dda446c"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery.validate.min.js",
+      "SHA256": "270524b0d27afd1d3b6622d1a176c678daed94564c143297e217a63e21ce9820"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery.validate.unobtrusive.js",
+      "SHA256": "5cd342f044b0dbd8a8a512ee91545ace53f8e13c678c698441a9c72799079ad9"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/jquery.validate.unobtrusive.min.js",
+      "SHA256": "e3124e90891a781a65379b6572fc6709b073df8a39fe4ce95dca63364a27568b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/modernizr-2.8.3.js",
+      "SHA256": "7dfc3ef73c1284c7aff3c5cdac3812d212c8b899037d7860c8ba20a1defb9a7f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Scripts/store-menu.js",
+      "SHA256": "c480caf669373bec6aaa9052a573c2de3c1cb8c1980f6310501c0bc61a638034"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/DashboardService.cs",
+      "SHA256": "a46446be4ea4beecbc1d02b935b1a2e70da47b74c66c3ed10ecf53ebab850379"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/DemoCatalog.cs",
+      "SHA256": "593bb33582b061d56861f8fc921aa102486d730dc14902881d23f05e5f174614"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/IdentityProvisioning.cs",
+      "SHA256": "e5df4d2c3ea9984bad473a00b7ff7c0c973f738898183bdb5330b10aa8a39d23"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/NavigationAccess.cs",
+      "SHA256": "37dbd65043b0aa5e0e08e20ef36792aba4db97f91690b0edf32d7659be532364"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/PurchaseReceiptService.cs",
+      "SHA256": "b71bdb0ebf9216bc4acb97b67e811aa420a8bebbfa0d280d6b02d18c3d924728"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/SalesOrderService.cs",
+      "SHA256": "1c2df14379f64b8c914b8313436499c6b92aac51fa29e9c53821cf335360c80b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/ShiftManagementService.cs",
+      "SHA256": "ae7bb99a375f4c2cdebff0c76c06666d436dd9253c140178f1a6a4104afdd8cb"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/ShoppingCart.cs",
+      "SHA256": "8ab83cf01155e0597a25081cd84db720fd25b337a0c5809eef70675eb54ab4af"
+    },
+    {
+      "Path": "OnlineSalesManagement/Services/StorePresentation.cs",
+      "SHA256": "52a67bf695dcfa5252b27593a96184ad1f894322495cf9121e38f0bc2e3efd8f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Startup.cs",
+      "SHA256": "19b1e0822fb8c02b3e720a26ed69caf68c8757ccb457af084c74e70c7adc5dbd"
+    },
+    {
+      "Path": "OnlineSalesManagement/ViewModels/BusinessReportViewModel.cs",
+      "SHA256": "b6c116359d0ad44c34ebfd1a592ebe55db56dc03fa92940d339127ff268c4bdf"
+    },
+    {
+      "Path": "OnlineSalesManagement/ViewModels/DashboardViewModel.cs",
+      "SHA256": "a32d26ea68d97824db2e34a612364c2d06f766ff9addb37384ec44bbc2991f15"
+    },
+    {
+      "Path": "OnlineSalesManagement/ViewModels/PurchaseReceiptCreateViewModel.cs",
+      "SHA256": "1487e48ec4e91e9fae947dbbb6a881fdeeecc1b57fcf2f31836b07dfe7ae8a88"
+    },
+    {
+      "Path": "OnlineSalesManagement/ViewModels/SalesOrderCreateViewModel.cs",
+      "SHA256": "66701455f7cf9d8ee8e6d64b4f0a0b7fdd94fb1cf1a13e378674c17a698eefac"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ConfirmEmail.cshtml",
+      "SHA256": "d8b4024333dc2fff9125c5ba111ce044f905bf291f4f8f45c80e92d2ca1322fe"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ExternalLoginConfirmation.cshtml",
+      "SHA256": "4c3fa748746b718dbb0372d4bf5f243e941377aaebd5247467e565e852eca770"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ExternalLoginFailure.cshtml",
+      "SHA256": "3ed15624928d6ab9882859429e2851c1ba51e1f5f9f39b40366a3b51e7e8808a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ForgotPassword.cshtml",
+      "SHA256": "8137a009c4e94d4394fb7c80268c35532c3454f0a78c2f52c5184972336a844b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ForgotPasswordConfirmation.cshtml",
+      "SHA256": "4ef2e8343e0c9100c0f3a24518ccaeab3ea902bbd9bd61eff94b49c4d2ec5e57"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/Login.cshtml",
+      "SHA256": "aef26c8e8a68a9c639cbb0a4c5282470617657839c3d98ab867b53b49147a799"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/Register.cshtml",
+      "SHA256": "153ccbfb7cf20163794b99500c049c69823c4e21a9e5c96e7c60d634fe4b0a5f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ResetPassword.cshtml",
+      "SHA256": "a4db3dc5f9a69ede28c79693633b6daa9a2632b7ef0b4f52cfba21b884d76678"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/ResetPasswordConfirmation.cshtml",
+      "SHA256": "9f698033cc32fba85101b8075d6a512355ec9d8c73aeb5037a59dcda40c3fbc0"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/SendCode.cshtml",
+      "SHA256": "76c4a5a6c698019a7d4c86deda0d088ca23c24336d95ae25e78c931c5ec952a2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/VerifyCode.cshtml",
+      "SHA256": "30efa55a3903e1f237f9a693e1027d99a1d0251f2e87daa49dd86bc0553f67e5"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Account/_ExternalLoginsListPartial.cshtml",
+      "SHA256": "a2c9dc52bf3114a261cebc9e60d0a6434723e1b1ce83b6e854323c1146271d32"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/AdminUsers/Activity.cshtml",
+      "SHA256": "d34e896b6ca005ee304f03704f182d2f278bcf7ac0d7e7506621cce226e41857"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/AdminUsers/Index.cshtml",
+      "SHA256": "90148a593d37ff2b6021237fe16241683a32ab5f32a7682f4d40c731b2c5ae58"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Categories/Edit.cshtml",
+      "SHA256": "bd4eb8e42e85d2ab1f4077fbecf5b6de89e1bed19996f6dc339df3168a238dd8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Categories/Index.cshtml",
+      "SHA256": "7413ced508966110d96624339abafffe865c782a3bf68106612912191d7165d3"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Customers/Create.cshtml",
+      "SHA256": "8415619cff16d232d9ff1322bcc3ab82da89cca334d730a2ef37799edb4823f0"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Customers/Delete.cshtml",
+      "SHA256": "093eb7dbf11184002774e9a10dcb00e49316a8f7dd79e58a2ba48a19dc8baacf"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Customers/Details.cshtml",
+      "SHA256": "0015edc457200c0c96125c4003d8b92bada7aa5504939631e1ff7d4b600066c9"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Customers/Edit.cshtml",
+      "SHA256": "0fd01e43b1926ae7b13e1c64585dd17a16c18a6555a2c0aa48cc3229346efa90"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Customers/Index.cshtml",
+      "SHA256": "b0412b8d0d26196be219d3f43c752edfd6c7f443788d1110f5451b4d0c4f7636"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Employees/Create.cshtml",
+      "SHA256": "9b95f17ea8110fb823885b029314142a2ea98317f4115b8ff3db07594b5fabe4"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Employees/Delete.cshtml",
+      "SHA256": "66d54694659866a9080b200ecafc8bd5feef2e92ce6147a40fd8d9c5f91ca04d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Employees/Details.cshtml",
+      "SHA256": "48904eda95ea5878139addfb103caafd0f52f9dd5fd051c1dca9541f880bd7fb"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Employees/Edit.cshtml",
+      "SHA256": "fd8144fbbd2428ee906c1228f369b0f43bfe3cf1c9abf45ef26bf099c97a86ff"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Employees/Index.cshtml",
+      "SHA256": "e94c98f3a29caf6fab96b38d4fc862096fa8f97b70e1848b5c27dc348f6e2c2b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Home/About.cshtml",
+      "SHA256": "d72deb9d6f9f4b7d352c08b57bde530ab1b3c74df791828e8c61869cd97389e2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Home/Contact.cshtml",
+      "SHA256": "b59e449ea24e14b93ba54ca82959b32fe984a0b0a9be6a4f76b505a3b6869f98"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Home/Index.cshtml",
+      "SHA256": "44b3372ae7a3591996d99896fcebaabea737c8ea1f43f1da01fbc1a29c9fd9b8"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Home/Welcome.cshtml",
+      "SHA256": "2d2b7fa419830d5310118d7056b1bc87ad25ac1fa138acad41023f04eccffb3a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/InventoryReports/index.cshtml",
+      "SHA256": "01829885825751029f743bc0c7bc3463fbdbbd73efbe24db7a5fcc7b477dae23"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/AddPhoneNumber.cshtml",
+      "SHA256": "36f852a355bfa9953a255b002f0a4c8e8fd0919207962cdc6538e61d5966a084"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/ChangePassword.cshtml",
+      "SHA256": "d44ef2d2300744ca9a6595f2559d0eabf77161d5f0a0dca169d7eb0201ee1dd3"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/Index.cshtml",
+      "SHA256": "469d4c55ee7f9e987a01a0856b5ddb7c72dda058cbf9e05ae2c128d548060421"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/ManageLogins.cshtml",
+      "SHA256": "1406edd34f8aba9dd3175f79fd818fa0e569f3c45d0f0ef119780fadc304040d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/SetPassword.cshtml",
+      "SHA256": "f552756fb89b6b45e3cad311f35e4a5155d049bf41b56731b5774abb600b1ebc"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Manage/VerifyPhoneNumber.cshtml",
+      "SHA256": "2ef748c5e437cb5fe5194e5d9d362606cd72ba0c91358355a724d304f0128353"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Products/Create.cshtml",
+      "SHA256": "3c59a92281577e414e5cb0d79f2bad566cdbfc08e93750d35a9707ea6b7771e1"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Products/Delete.cshtml",
+      "SHA256": "3627f3a8a905da688cafdb76fa4c3229bc826c56fa5982ae30e373b4fd999bdb"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Products/Details.cshtml",
+      "SHA256": "78f8133b4439b8162c5ce7b02b1e43fd221a4df2fd630f02b0515550a5f0f744"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Products/Edit.cshtml",
+      "SHA256": "c11659e957b8fcc027026ad879d219f829bf87e8bfd1f4feb3b6dff4f3f91982"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Products/Index.cshtml",
+      "SHA256": "b86d3e63565c40a74f5f586cb84506c670a705e861b0de9f1ae8eb18417eb2e6"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/PurchaseReceipts/Create.cshtml",
+      "SHA256": "374b3cfb24f287bf6cffc927c98a62e8da040981c8de98105c9a3035cf294590"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/PurchaseReceipts/Details.cshtml",
+      "SHA256": "8b9354189b84d697ba3b76dc256933b1f2d39ec8bbe42b917eb7e0abfd644b0c"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/PurchaseReceipts/Index.cshtml",
+      "SHA256": "7e2f7668bf3ece0e16c5e2cc77897c71b712c9976d1ec955a064a62936c1c3d7"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Reports/Index.cshtml",
+      "SHA256": "df9cc5edf9d7d0d9d31e4e549691b756c3f6c8429cc3451531e610d86393f679"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Reports/Purchases.cshtml",
+      "SHA256": "63261241fb0275449ab02d08d7b3e85dad9509cd1b65cc686565fc20d2d98de2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Reports/Sales.cshtml",
+      "SHA256": "676fa947bb4bc0dbe4b6655887faea8c58804c3f5709927c8d24bd76fc024284"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/SalesOrders/Create.cshtml",
+      "SHA256": "a0b75ab3993fd828ffb5603f4a560dccbd03bfef3847d078f618aa3e16205400"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/SalesOrders/Details.cshtml",
+      "SHA256": "57616cc54d73d046acf7b595bc7d25c53a78d195d28e916a232cfca4dfc6c511"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/SalesOrders/Invoice.cshtml",
+      "SHA256": "ac00ef004b0a74314ad428f3c8a135236399dae2957b2b92e852b1d9b753e7a1"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/SalesOrders/index.cshtml",
+      "SHA256": "af4d2120a1f4ea3584959fa6bc9faebd542c173ef5e28aee17e3b04fb545ec4f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/DisplayTemplates/OrderStatus.cshtml",
+      "SHA256": "95d279dc3afba101f4e5d5832fd20c671e3324948839a36d5940802cd2cb599d"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/DisplayTemplates/PaymentMethod.cshtml",
+      "SHA256": "477b061e58cd44bb3e7e9b83c99a273097579f4eb51152657458c611317c228a"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/DisplayTemplates/PaymentStatus.cshtml",
+      "SHA256": "6afd19e7d15860e2dd275e8f3a8700e186fe88a2cfe7f8c96d0ec13df10fce0f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/Error.cshtml",
+      "SHA256": "148c3f805001279c210a8c8384d6ff6e3340cd65a5087a6d5230a71968c7ead5"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/Lockout.cshtml",
+      "SHA256": "a1b7205a3ba524b06d981ec46553607d3ae276f600642f2446d7bddd04595d30"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/_CustomerLayout.cshtml",
+      "SHA256": "92ede6092b465e257c9f5a3b809c1210ee943164daed8dda2fc77fc18560a568"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/_DocumentFilters.cshtml",
+      "SHA256": "25ed0637f51d53869550c0618b68d042782b9171397af5c64fddac0e8edb9f97"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/_Layout.cshtml",
+      "SHA256": "d19babb57c8fd01acf0a44285b0649fa82e9f9769c949458550cfd1a492bc447"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/_LoginPartial.cshtml",
+      "SHA256": "d0e6b7c306ef0cb70b44b0b04b5b1d222f7fc4d6573424f4ee8c9c1d7bfde41c"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Shared/_ShopToast.cshtml",
+      "SHA256": "4f5abc016320b67608bea7adb793606f66fa4de2d6f6b9e5e948abceffc3fc52"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/Cart.cshtml",
+      "SHA256": "001d22cfdc3e04cb93a95ab54f616d7ff313afa9d49b820d3c971e1b69b6ae36"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/Checkout.cshtml",
+      "SHA256": "95e943a9f0c080d97a4eb9e9316fbae303d23ad648a68cfee9f9cfe2aa21af9b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/Details.cshtml",
+      "SHA256": "671c4a29e83ce5da075a39b81126000f94c97615717703f3a20819b933f8b1c2"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/Index.cshtml",
+      "SHA256": "71e9ec86bb66bf81d4524d8038d3e0980490efd73e738aa273c4bb6ecaf9826f"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/Orders.cshtml",
+      "SHA256": "234f6a073ac24ffc0a75454ea2457a7aa6b6d5060af1c30bec0842103afacabb"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/_CartBadge.cshtml",
+      "SHA256": "c9e57cbb1876268c44f9691c0eea59513a93ca2a4d7deac34bf2505b60ab7395"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/_CategoryMenu.cshtml",
+      "SHA256": "5819672003aecaaac4b82e26c778b79bf10fa40ab3f10a14e89a5e3ca28bc845"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Store/_ProductModal.cshtml",
+      "SHA256": "843645c602c308327f1d801d03fd0834487081cb7e88153a0b786e001ff620d1"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Suppliers/Create.cshtml",
+      "SHA256": "eb535aafb2422f24eaf9339e07b93bda181a2c2c18a732ed3ad2f0d58d29ef50"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Suppliers/Delete.cshtml",
+      "SHA256": "537b2023f145622dccf319ad827794ade27eff7e7c661e471551b87ed5c61fe1"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Suppliers/Details.cshtml",
+      "SHA256": "3e0e1443b06691826bea35f6ef3f56ff29356dc219913aceff6ecb1534b24efc"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Suppliers/Edit.cshtml",
+      "SHA256": "c4fe5ef07fbd7970dd582560e72fbb15c3e5ed7def1a554524df0102f040f849"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Suppliers/Index.cshtml",
+      "SHA256": "3a0486193cabcda26757e06c4fdd0d1f4b19b802f7321e24fbbba45c5748ede4"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/_ViewStart.cshtml",
+      "SHA256": "430ddd13fdc8cf7e508ffbc686777df710b89f5a774a8ae7f964412a2ed49e0b"
+    },
+    {
+      "Path": "OnlineSalesManagement/Web.Debug.config",
+      "SHA256": "f45e628e42b23afc1876d4df14ed62a3ae453c8d80bf859c1913b0bc3d983600"
+    },
+    {
+      "Path": "OnlineSalesManagement/Web.Release.config",
+      "SHA256": "1a1f80e3a637927b445ac846148312485db25794b990fcc8e91b9777d96c1e23"
+    },
+    {
+      "Path": "OnlineSalesManagement/favicon.ico",
+      "SHA256": "a94f8a8553caea8430dd4ca3cc01d4e318d19828f74cb65453ffb7f5d9e2f44d"
+    },
+    {
+      "Path": "OnlineSalesManagement/packages.config",
+      "SHA256": "8ad26acd3db317e61685dcdc46c86a7c5014ddcf4e7c1659e974397ec5f576b9"
+    },
+    {
+      "Path": "OnlineSalesManagement/Views/Web.config",
+      "SHA256": "36f30209c457ab0b8c66715d72f97a0c3728c301e4bc02b492a31cb9497b95dc"
+    }
+  ]
+}
