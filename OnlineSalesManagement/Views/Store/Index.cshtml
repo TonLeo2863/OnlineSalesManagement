@@ -1,8 +1,8 @@
 ﻿@model IEnumerable<OnlineSalesManagement.Product>
 @using OnlineSalesManagement.Services
-@{ ViewBag.Title = "Cửa hàng"; }
+@{ ViewBag.Title = "Cửa hàng"; bool preview = ViewBag.AdminPreview == true; if (preview) { Layout = "~/Views/Shared/_CustomerLayout.cshtml"; } }
 
-<div class="section-heading"><div><span class="shop-eyebrow">Khám phá OSshop</span><h1>Tìm sản phẩm bạn yêu thích</h1><p>Lựa chọn hôm nay, mua sắm theo cách của bạn.</p></div><a href="@Url.Action("Orders")">Đơn hàng của tôi →</a></div>
+<div class="section-heading"><div><span class="shop-eyebrow">Khám phá OSshop</span><h1>Tìm sản phẩm bạn yêu thích</h1><p>Lựa chọn hôm nay, mua sắm theo cách của bạn.</p></div>@if (!preview) { <a href="@Url.Action("Orders")">Đơn hàng của tôi →</a> }</div>
 @using (Html.BeginForm("Index", "Store", FormMethod.Get, new { @class = "shop-search", role = "search" })) {
     if (!string.IsNullOrWhiteSpace(Request.QueryString["categoryId"])) { <input type="hidden" name="categoryId" value="@Request.QueryString["categoryId"]" /> }
     <label for="productSearch" class="visually-hidden">Tìm sản phẩm theo tên hoặc SKU</label><div class="input-group"><input id="productSearch" name="q" value="@Request.QueryString["q"]" class="form-control" placeholder="Bạn đang tìm sản phẩm gì?" /><button class="btn btn-primary" type="submit">Tìm kiếm</button></div>
@@ -10,14 +10,15 @@
 <div class="store-catalog-layout">
 @Html.Partial("_CategoryMenu")
 <section class="store-catalog-results" aria-label="Danh sách sản phẩm">
-<div class="section-heading"><p>@Model.Count() sản phẩm · Thanh toán khi nhận hàng</p><a href="@Url.Action("Cart")">Xem giỏ hàng →</a></div>
+<div class="section-heading"><p>@Model.Count() sản phẩm · Thanh toán khi nhận hàng</p>@if (!preview) { <a href="@Url.Action("Cart")">Xem giỏ hàng →</a> }</div>
 <div class="product-grid">
 @foreach (var p in Model) {
     <article class="shop-product" data-product-id="@p.Id">
         <img class="product-image" src="@StorePresentation.ImageUrl(Url, p.ImageUrl)" alt="@p.Name" loading="lazy" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" />
         <div class="product-info"><span class="product-sku">@p.Sku</span><h2 class="product-name">@p.Name</h2><p class="product-price">@p.SalePrice.ToString("N0") ₫</p><p class="product-stock">@(p.QuantityInStock > 0 ? "Số lượng còn lại: " + p.QuantityInStock : "Hết hàng")</p>
             <div class="product-actions">
-                @if (ViewBag.CartVersion != null) {
+                @if (preview) { <button type="button" class="btn btn-primary" disabled>Chỉ xem trước</button> }
+                else if (ViewBag.CartVersion != null) {
                     using (Html.BeginForm("AddToCart", "Store", FormMethod.Post, new { data_add_cart = "true" })) {
                         @Html.AntiForgeryToken()<input type="hidden" name="version" value="@ViewBag.CartVersion" /><input type="hidden" name="productId" value="@p.Id" /><input type="hidden" name="quantity" value="1" />
                         <button type="submit" class="btn btn-primary" disabled="@(p.QuantityInStock <= 0 ? "disabled" : null)">Thêm vào giỏ</button>

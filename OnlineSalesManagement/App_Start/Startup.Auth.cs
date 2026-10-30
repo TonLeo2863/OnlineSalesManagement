@@ -51,9 +51,20 @@ namespace OnlineSalesManagement
                     },
                     // Enables the application to validate the security stamp when the user logs in.
                     // This is a security feature which is used when you change a password or add an external login to your account.  
-                    OnValidateIdentity = SecurityStampValidator.OnValidateIdentity<ApplicationUserManager, ApplicationUser>(
-                        validateInterval: TimeSpan.Zero,
-                        regenerateIdentity: (manager, user) => user.GenerateUserIdentityAsync(manager))
+                    OnValidateIdentity = async context =>
+                    {
+                        var manager = context.OwinContext.GetUserManager<ApplicationUserManager>();
+                        var uid = context.Identity.GetUserId();
+                        var user = string.IsNullOrWhiteSpace(uid) ? null : await manager.FindByIdAsync(uid);
+                        if (user == null || user.IsAdministrativelySuspended)
+                        {
+                            context.RejectIdentity();
+                            context.OwinContext.Authentication.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+                            return;
+                        }
+                        await SecurityStampValidator.OnValidateIdentity<ApplicationUserManager, ApplicationUser>(
+                            TimeSpan.Zero, (m, u) => u.GenerateUserIdentityAsync(m))(context);
+                    }
                 }
             });            
             app.UseExternalSignInCookie(DefaultAuthenticationTypes.ExternalCookie);

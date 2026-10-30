@@ -1,4 +1,4 @@
-@model OnlineSalesManagement.Category
+﻿@model OnlineSalesManagement.Category
 @{ ViewBag.Title = Model.Id == 0 ? "Thêm danh mục" : "Sửa danh mục"; }
 <h2>@ViewBag.Title</h2>
 @using (Html.BeginForm(Model.Id == 0 ? "Create" : "Edit", "Categories", FormMethod.Post)) {

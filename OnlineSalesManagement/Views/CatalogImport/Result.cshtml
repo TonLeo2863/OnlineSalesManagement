@@ -1,0 +1,3 @@
+﻿@model OnlineSalesManagement.ViewModels.CatalogImportResult
+@{ViewBag.Title="Kết quả nhập Excel";}
+<div class="panel p-4"><h1 class="page-title">Nhập Excel thành công</h1><div class="alert alert-success mt-3" role="status">Đã tạo @Model.Added @(Model.Kind=="products"?"sản phẩm":"danh mục"). Không cập nhật bản ghi cũ.</div><a class="btn btn-primary" href="@Url.Action("Index",Model.Kind=="products"?"Products":"Categories")">Xem danh sách</a><a class="btn btn-outline-primary" href="@Url.Action("Upload",new {kind=Model.Kind})">Nhập file khác</a></div>

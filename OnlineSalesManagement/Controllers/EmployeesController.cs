@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using OnlineSalesManagement.Services;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
@@ -18,14 +19,30 @@ namespace OnlineSalesManagement.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Employees
-        public ActionResult Index()
+        public ActionResult Index(string code = null, string fullName = null, string email = null, string phone = null, bool? active = null,
+            DateTime? fromDate = null, DateTime? toDate = null, int page = 1, string position = null)
         {
-            var employees = db.Employees.Include(e => e.User);
-            return View(employees.ToList());
+            PeopleDirectory.CheckDates(ModelState, fromDate, toDate);
+            var contact = PeopleDirectory.ContactSearch(phone, ModelState);
+            if ((code ?? "").Length > 20 || (fullName ?? "").Length > 150 || (email ?? "").Length > 256) ModelState.AddModelError("", "Điều kiện tìm kiếm quá dài.");
+            ViewBag.PositionOptions = new SelectList(PeopleDirectory.Positions.Concat(db.Employees.AsNoTracking().Where(x => x.Position != null && x.Position != "").Select(x => x.Position).Distinct().ToList()).Distinct().OrderBy(x => x).ToList(), position);
+            if (!ModelState.IsValid) { ViewBag.Total = 0; ViewBag.Page = 1; ViewBag.PageCount = 1; return View(new System.Collections.Generic.List<Employee>()); }
+            var query = db.Employees.AsNoTracking().Include(x => x.User).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(code)) { code = code.Trim(); query = query.Where(x => x.Code.Contains(code)); }
+            if (!string.IsNullOrWhiteSpace(fullName)) { fullName = fullName.Trim(); query = query.Where(x => x.FullName.Contains(fullName)); }
+            if (!string.IsNullOrWhiteSpace(email)) { email = email.Trim(); query = query.Where(x => x.Email.Contains(email)); }
+            if (contact != null) query = query.Where(x => x.PhoneNumber != null && x.PhoneNumber.Replace("+84", "0").Replace(" ", "").Replace("-", "").Replace(".", "").Replace("(", "").Replace(")", "").Contains(contact));
+            if (active.HasValue) query = query.Where(x => x.IsActive == active.Value);
+            if (fromDate.HasValue) { var start = fromDate.Value.Date; query = query.Where(x => x.HireDate >= start); }
+            if (toDate.HasValue) { var end = toDate.Value.Date.AddDays(1); query = query.Where(x => x.HireDate < end); }
+            if (!string.IsNullOrWhiteSpace(position)) query = query.Where(x => x.Position == position);
+            var total = query.Count(); var pages = Math.Max(1, (total + 19) / 20); page = Math.Min(Math.Max(1, page), pages);
+            ViewBag.Total = total; ViewBag.Page = page; ViewBag.PageCount = pages;
+            return View(query.OrderBy(x => x.Code).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToList());
         }
 
         // GET: Employees/Details/5
-        public ActionResult Details(int? id)
+        public ActionResult Details(int? id, int ordersPage = 1, int receiptsPage = 1)
         {
             if (id == null)
             {
@@ -36,6 +53,8 @@ namespace OnlineSalesManagement.Controllers
             {
                 return HttpNotFound();
             }
+            ViewBag.OrderHistory = TransactionHistory.Sales(db.SalesOrders.Where(o => o.EmployeeId == employee.Id), employee.Id, ordersPage, "Đơn hàng đã xử lý", true);
+            ViewBag.ReceiptHistory = TransactionHistory.Receipts(db.PurchaseReceipts.Where(o => o.EmployeeId == employee.Id), employee.Id, receiptsPage, "Phiếu nhập do nhân viên lập", true);
             return View(employee);
         }
 
@@ -51,8 +70,10 @@ namespace OnlineSalesManagement.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee)
+        public ActionResult Create([Bind(Include = "Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee, string positionChoice = null)
         {
+            try { employee.Position = PeopleDirectory.ResolvePosition(positionChoice, employee.Position); if (!string.IsNullOrEmpty(positionChoice)) ModelState.Remove("Position"); }
+            catch (ArgumentException ex) { ModelState.AddModelError("Position", ex.Message); }
             ValidateRecord(employee);
             if (ModelState.IsValid)
             {
@@ -85,8 +106,10 @@ namespace OnlineSalesManagement.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee)
+        public ActionResult Edit([Bind(Include = "Id,Code,FullName,Email,PhoneNumber,Address,Position,HireDate,IsActive,UserId")] Employee employee, string positionChoice = null)
         {
+            try { employee.Position = PeopleDirectory.ResolvePosition(positionChoice, employee.Position); if (!string.IsNullOrEmpty(positionChoice)) ModelState.Remove("Position"); }
+            catch (ArgumentException ex) { ModelState.AddModelError("Position", ex.Message); }
             ValidateRecord(employee);
             if (ModelState.IsValid)
             {

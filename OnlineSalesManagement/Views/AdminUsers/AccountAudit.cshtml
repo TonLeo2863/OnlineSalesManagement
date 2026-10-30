@@ -1,0 +1,8 @@
+﻿@model IEnumerable<OnlineSalesManagement.Models.AccountAdministrationAudit>
+@{ ViewBag.Title = "Nhật ký quản trị tài khoản"; }
+<h1 class="page-title">Nhật ký quản trị tài khoản</h1><p>Thời gian UTC. Chỉ Admin được truy cập. Không chứa mật khẩu, OTP hay lịch sử định danh khách hàng.</p>
+<div class="panel table-responsive"><table class="table"><thead><tr><th>UTC</th><th>Tài khoản (ID)</th><th>Admin (ID)</th><th>Hành động</th><th>Lý do</th></tr></thead><tbody>
+@foreach(var row in Model) { <tr><td>@row.OccurredUtc.ToString("dd/MM/yyyy HH:mm:ss")</td><td>@row.TargetUserId</td><td>@row.ActorUserId</td><td>@row.Action</td><td>@row.Reason</td></tr> }
+</tbody></table></div>
+@{ int page; if(!int.TryParse(Request.QueryString["page"],out page) || page<1) {page=1;} }
+<div class="d-flex gap-2 mt-3"><a class="btn btn-outline-secondary" href="@Url.Action("Index")">Tài khoản</a>@if(page>1){<a class="btn btn-outline-primary" href="@Url.Action("AccountAudit",new{page=page-1})">Trước</a>}@if(Model.Count()==50){<a class="btn btn-outline-primary" href="@Url.Action("AccountAudit",new{page=page+1})">Sau</a>}</div>

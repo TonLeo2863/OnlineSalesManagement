@@ -1,0 +1,15 @@
+﻿@{bool employees=string.Equals((string)ViewContext.RouteData.Values["controller"],"Employees",StringComparison.OrdinalIgnoreCase);string[] advanced={"fullName","email","phone","position","active","fromDate","toDate"};bool expanded=advanced.Any(k=>!string.IsNullOrWhiteSpace(Request.QueryString[k]));}
+@using(Html.BeginForm("Index",employees?"Employees":"Customers",FormMethod.Get,new {@class="filter-bar"})){
+ @Html.ValidationSummary(false,"",new {@class="text-danger",role="alert"})
+ <div class="row g-2"><div class="col-md-7"><label for="code" class="form-label">Mã @(employees?"nhân viên":"khách hàng")</label>@Html.TextBox("code",Request.QueryString["code"],new {@class="form-control",type="search",maxlength="20",placeholder="Tìm theo mã…"})</div></div>
+ <details class="mt-3" open="@(expanded?"open":null)"><summary>Tìm kiếm nâng cao</summary><div class="row g-3 mt-1">
+ <div class="col-md-4"><label for="fullName" class="form-label">Họ tên</label>@Html.TextBox("fullName",Request.QueryString["fullName"],new {@class="form-control",maxlength="150"})</div>
+ <div class="col-md-4"><label for="email" class="form-label">Email liên hệ</label>@Html.TextBox("email",Request.QueryString["email"],new {@class="form-control",maxlength="256"})</div>
+ <div class="col-md-4"><label for="phone" class="form-label">SĐT liên hệ</label>@Html.TextBox("phone",Request.QueryString["phone"],new {@class="form-control",maxlength="25"})</div>
+ @if(employees){<div class="col-md-4"><label for="position" class="form-label">Chức vụ (không phải quyền tài khoản)</label>@Html.DropDownList("position",(SelectList)ViewBag.PositionOptions,"Tất cả",new {@class="form-select"})</div>}
+ <div class="col-md-4"><label for="active" class="form-label">@(employees?"Tình trạng làm việc":"Trạng thái hồ sơ")</label>@Html.DropDownList("active",new SelectList(new[]{new{Value="",Text="Tất cả"},new{Value="true",Text=employees?"Đang làm việc":"Hoạt động"},new{Value="false",Text=employees?"Ngừng làm việc":"Ngừng hoạt động"}},"Value","Text",Request.QueryString["active"]),new {@class="form-select"})</div>
+ <div class="col-md-4"><label for="fromDate" class="form-label">@(employees?"Vào làm":"Tạo hồ sơ") từ ngày</label>@Html.TextBox("fromDate",Request.QueryString["fromDate"],new {@class="form-control",type="date",min="1753-01-01",max="9999-12-30"})</div>
+ <div class="col-md-4"><label for="toDate" class="form-label">Đến ngày</label>@Html.TextBox("toDate",Request.QueryString["toDate"],new {@class="form-control",type="date",min="1753-01-01",max="9999-12-30"})</div>
+ </div></details>
+ <div class="d-flex gap-2 mt-3"><button type="submit" class="btn btn-primary">Tìm kiếm</button><a class="btn btn-outline-secondary" href="@Url.Action("Index")">Đặt lại</a></div>
+}

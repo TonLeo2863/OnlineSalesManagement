@@ -1,0 +1,8 @@
+﻿@model OnlineSalesManagement.Employee
+@{string value=Model==null?null:Model.Position;string choice=string.IsNullOrWhiteSpace(value)?"":OnlineSalesManagement.Services.PeopleDirectory.Positions.Where(p=>p!="Khác").Contains(value)?value:"__other__";}
+<div data-position-picker>
+ <label for="positionChoice" class="visually-hidden">Chọn chức vụ</label><select name="positionChoice" id="positionChoice" class="form-select"><option value="">Chọn chức vụ</option>@foreach(var position in OnlineSalesManagement.Services.PeopleDirectory.Positions.Where(p=>p!="Khác")){<option value="@position" selected="@(choice==position?"selected":null)">@position</option>}<option value="__other__" selected="@(choice=="__other__"?"selected":null)">Khác — nhập tên (giữ chức vụ cũ nếu chưa có trong danh sách)</option></select>
+ <div id="customPosition" class="mt-2" hidden="@(choice!="__other__"?"hidden":null)"><label for="Position" class="form-label">Tên chức vụ khác</label><input type="text" id="Position" name="Position" value="@value" maxlength="100" class="form-control" disabled="@(choice!="__other__"?"disabled":null)" /></div>
+ <small class="text-muted">Chức vụ nhân sự độc lập với Identity Role.</small>
+</div>
+<script>(function(){var choice=document.getElementById('positionChoice'),custom=document.getElementById('customPosition'),input=document.getElementById('Position');function update(){var other=choice.value==='__other__';custom.hidden=!other;input.disabled=!other;input.required=other;}choice.addEventListener('change',update);update();})();</script>

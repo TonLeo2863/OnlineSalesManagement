@@ -1,0 +1,15 @@
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const code=readFileSync(new URL('../OnlineSalesManagement/Scripts/cancel-order.js',import.meta.url),'utf8');
+const events={}, confirm={disabled:false,addEventListener:(k,f)=>events.confirm=f}, label={textContent:''};
+let submits=0,shows=0;const submitButton={disabled:false};
+const form={dataset:{cancelOrder:'WEB-<unsafe>'},addEventListener:(k,f)=>events.submit=f,submit:()=>submits++,querySelector:()=>submitButton};
+const modal={addEventListener:(k,f)=>events.hidden=f};
+vm.runInNewContext(code,{document:{getElementById:id=>({cancelOrderModal:modal,confirmCancelOrder:confirm,cancelOrderCode:label})[id],querySelectorAll:()=>[form]},bootstrap:{Modal:class{show(){shows++;}}}});
+let prevented=false;events.submit({preventDefault(){prevented=true;}});
+assert.ok(prevented&&shows===1&&submits===0);console.log('PASS: cancel form opens modal without submitting');
+assert.equal(label.textContent,'WEB-<unsafe>');console.log('PASS: order number rendered as plain text');
+events.hidden();events.confirm();assert.equal(submits,0);console.log('PASS: keep order/dismiss clears pending form');
+events.submit({preventDefault(){}});events.confirm();assert.ok(submits===1&&confirm.disabled&&submitButton.disabled);console.log('PASS: explicit confirmation submits once and disables buttons');
+events.confirm();events.submit({preventDefault(){}});assert.equal(submits,1);console.log('PASS: rapid repeat clicks cannot submit twice');

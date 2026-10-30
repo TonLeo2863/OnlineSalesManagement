@@ -7,6 +7,8 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using OnlineSalesManagement.Models;
+using OnlineSalesManagement.Services;
+using System.Data;
 
 namespace OnlineSalesManagement.Controllers
 {
@@ -116,18 +118,27 @@ namespace OnlineSalesManagement.Controllers
             {
                 return View(model);
             }
-            // Generate the token and send it
-            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(User.Identity.GetUserId(), model.Number);
-            if (UserManager.SmsService != null)
+            try
             {
-                var message = new IdentityMessage
-                {
-                    Destination = model.Number,
-                    Body = "Your security code is: " + code
-                };
-                await UserManager.SmsService.SendAsync(message);
+                model.Number = AccountGovernance.NormalizePhone(model.Number);
+                using (var db = new ApplicationDbContext())
+                    if (AccountGovernance.VerifiedPhoneUsed(db, model.Number, User.Identity.GetUserId()))
+                        throw new ArgumentException("Không thể dùng số điện thoại này. Vui lòng kiểm tra hoặc liên hệ hỗ trợ.");
+                var sent = Session["PhoneOtpSentUtc"] as DateTime?;
+                if (sent.HasValue && sent.Value.AddMinutes(1) > DateTime.UtcNow) throw new ArgumentException("Vui lòng chờ trước khi yêu cầu mã mới.");
+                var code = await UserManager.GenerateChangePhoneNumberTokenAsync(User.Identity.GetUserId(), model.Number);
+                if (UserManager.SmsService == null || UserManager.SmsService is SmsService)
+                    throw new ArgumentException("Chưa cấu hình SMS; chưa thể xác minh số điện thoại.");
+                await UserManager.SmsService.SendAsync(new IdentityMessage { Destination = model.Number, Body = "Ma xac minh: " + code });
+                Session["PhoneOtpOwnerId"] = User.Identity.GetUserId();
+                Session["PhoneOtpNumber"] = model.Number;
+                Session["PhoneOtpSentUtc"] = DateTime.UtcNow;
+                Session["PhoneOtpAttempts"] = 0;
+                return RedirectToAction("VerifyPhoneNumber");
             }
-            return RedirectToAction("VerifyPhoneNumber", new { PhoneNumber = model.Number });
+            catch (ArgumentException ex) { ModelState.AddModelError("", ex.Message); }
+            catch (Exception) { ModelState.AddModelError("", "Chưa gửi được mã. Vui lòng thử lại sau."); }
+            return View(model);
         }
 
         //
@@ -162,11 +173,13 @@ namespace OnlineSalesManagement.Controllers
 
         //
         // GET: /Manage/VerifyPhoneNumber
-        public async Task<ActionResult> VerifyPhoneNumber(string phoneNumber)
+        public ActionResult VerifyPhoneNumber(string phoneNumber)
         {
-            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(User.Identity.GetUserId(), phoneNumber);
-            // Send an SMS through the SMS provider to verify the phone number
-            return phoneNumber == null ? View("Error") : View(new VerifyPhoneNumberViewModel { PhoneNumber = phoneNumber });
+            var pending = Session["PhoneOtpNumber"] as string;
+            var sent = Session["PhoneOtpSentUtc"] as DateTime?;
+            if (pending == null || (Session["PhoneOtpOwnerId"] as string) != User.Identity.GetUserId() || !sent.HasValue || sent.Value.AddMinutes(5) < DateTime.UtcNow)
+                return RedirectToAction("AddPhoneNumber");
+            return View(new VerifyPhoneNumberViewModel { PhoneNumber = pending });
         }
 
         //
@@ -179,18 +192,40 @@ namespace OnlineSalesManagement.Controllers
             {
                 return View(model);
             }
-            var result = await UserManager.ChangePhoneNumberAsync(User.Identity.GetUserId(), model.PhoneNumber, model.Code);
+            var pending = Session["PhoneOtpNumber"] as string;
+            var sent = Session["PhoneOtpSentUtc"] as DateTime?;
+            var attempts = (Session["PhoneOtpAttempts"] as int?) ?? 0;
+            if (pending == null || (Session["PhoneOtpOwnerId"] as string) != User.Identity.GetUserId() || pending != model.PhoneNumber || !sent.HasValue || sent.Value.AddMinutes(5) < DateTime.UtcNow || attempts >= 5)
+            { ModelState.AddModelError("", "Mã đã hết hạn hoặc yêu cầu không hợp lệ. Hãy yêu cầu mã mới."); return View(model); }
+            Session["PhoneOtpAttempts"] = attempts + 1;
+            IdentityResult result;
+            try
+            {
+                using (var db = new ApplicationDbContext())
+                using (var tx = db.Database.BeginTransaction(IsolationLevel.Serializable))
+                using (var users = new ApplicationUserManager(new Microsoft.AspNet.Identity.EntityFramework.UserStore<ApplicationUser>(db)))
+                {
+                    if (AccountGovernance.VerifiedPhoneUsed(db, pending, User.Identity.GetUserId()))
+                    { ModelState.AddModelError("", "Không thể xác minh số điện thoại này."); return View(model); }
+                    result = await users.ChangePhoneNumberAsync(User.Identity.GetUserId(), pending, model.Code);
+                    if (result.Succeeded) tx.Commit();
+                }
+            }
+            catch (Exception)
+            { ModelState.AddModelError("", "Chưa thể xác minh. Vui lòng kiểm tra và thử lại sau."); return View(model); }
             if (result.Succeeded)
             {
                 var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
                 if (user != null)
                 {
+                    await HttpContext.GetOwinContext().Get<ApplicationDbContext>().Entry(user).ReloadAsync();
                     await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
                 }
+                Session.Remove("PhoneOtpOwnerId"); Session.Remove("PhoneOtpNumber"); Session.Remove("PhoneOtpAttempts");
                 return RedirectToAction("Index", new { Message = ManageMessageId.AddPhoneSuccess });
             }
             // If we got this far, something failed, redisplay form
-            ModelState.AddModelError("", "Failed to verify phone");
+            ModelState.AddModelError("", "Mã xác minh không hợp lệ.");
             return View(model);
         }
 
@@ -205,6 +240,7 @@ namespace OnlineSalesManagement.Controllers
             {
                 return RedirectToAction("Index", new { Message = ManageMessageId.Error });
             }
+            Session.Remove("PhoneOtpOwnerId"); Session.Remove("PhoneOtpNumber"); Session.Remove("PhoneOtpAttempts");
             var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
             if (user != null)
             {

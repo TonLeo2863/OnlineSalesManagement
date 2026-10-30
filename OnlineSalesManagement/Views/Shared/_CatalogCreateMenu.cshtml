@@ -1,0 +1,5 @@
+﻿@model string
+@{string label=Model=="products"?"sản phẩm":"danh mục";string controller=Model=="products"?"Products":"Categories";}
+@if(User.IsInRole("Admin")){
+<details class="create-options"><summary class="btn btn-primary">Thêm @label ▾</summary><div class="create-options-panel"><a href="@Url.Action("Create",controller)">Thêm một @label</a><a href="@Url.Action("Upload","CatalogImport",new {kind=Model})">Nhập nhiều từ Excel</a></div></details>
+}else{<a class="btn btn-primary" href="@Url.Action("Create",controller)">Thêm @label</a>}

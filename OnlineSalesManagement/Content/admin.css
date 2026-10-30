@@ -447,3 +447,10 @@ a.sidebar-link.active {
 
 .role-management .role-feedback.toast { position:fixed; right:20px; top:80px; width:min(380px, calc(100vw - 40px)); z-index:1090; padding-right:42px; }
 .role-management .role-feedback .btn-close { position:absolute; right:12px; top:14px; }
+
+.create-options { position:relative; }
+.create-options > summary { list-style:none; cursor:pointer; }
+.create-options > summary::-webkit-details-marker { display:none; }
+.create-options-panel { position:absolute; top:calc(100% + 6px); right:0; min-width:240px; z-index:30; padding:8px; background:#fff; border:1px solid var(--panel-border); border-radius:10px; box-shadow:0 12px 25px #0f172a15; }
+.create-options-panel a { display:block; padding:10px; text-decoration:none; border-radius:6px; }
+.create-options-panel a:hover,.create-options-panel a:focus-visible { background:#eff6ff; }

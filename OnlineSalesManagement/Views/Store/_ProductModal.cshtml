@@ -1,15 +1,17 @@
-<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalTitle" aria-describedby="productModalStatus" aria-hidden="true">
+﻿<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalTitle" aria-describedby="productModalStatus" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content shop-modal">
         <div class="modal-header"><h2 class="modal-title fs-5" id="productModalTitle">Chi tiết sản phẩm</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng chi tiết sản phẩm"></button></div>
         <div class="modal-body"><p id="productModalStatus" role="status" aria-live="polite">Đang tải sản phẩm…</p>
             <div class="row g-4" id="productModalContent" hidden>
                 <div class="col-md-6"><img id="detailImage" class="product-image modal-product-image" src="@Url.Content("~/Content/product-placeholder.svg")" alt="" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" /></div>
                 <div class="col-md-6"><div id="detailCategory" class="shop-eyebrow"></div><h3 id="detailName" class="mt-2"></h3><p class="product-sku">SKU: <span id="detailSku"></span> · Đơn vị: <span id="detailUnit"></span></p><p id="detailPrice" class="product-price fs-3"></p><p id="detailStock" class="product-stock"></p><p id="detailDescription" class="product-description"></p>
+                    <fieldset disabled="@(User.IsInRole("Admin") ? "disabled" : null)">
                     @using (Html.BeginForm("AddToCart", "Store", FormMethod.Post, new { data_add_cart = "true", id = "modalCartForm" })) {
                         @Html.AntiForgeryToken()<input type="hidden" name="version" value="@ViewBag.CartVersion" /><input type="hidden" name="productId" id="detailProductId" value="" />
                         <label for="detailQuantity" class="form-label">Số lượng muốn mua</label><input type="number" id="detailQuantity" name="quantity" value="1" min="1" max="1000" class="form-control mb-3" required />
                         <button type="submit" id="detailAdd" class="btn btn-primary w-100" disabled>Thêm vào giỏ</button>
                     }
+                    </fieldset>
                     <a id="detailLogin" class="btn btn-outline-primary mt-3" href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("Index", "Store") })" hidden>Đăng nhập để mua hàng</a>
                 </div>
             </div>

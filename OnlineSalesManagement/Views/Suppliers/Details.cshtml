@@ -81,3 +81,5 @@
     @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
     @Html.ActionLink("Back to List", "Index")
 </p>
+
+@Html.Partial("_TransactionHistory", (OnlineSalesManagement.ViewModels.TransactionHistoryViewModel)ViewBag.ReceiptHistory)

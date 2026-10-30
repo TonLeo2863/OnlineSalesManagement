@@ -11,6 +11,7 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using OnlineSalesManagement.Models;
+using OnlineSalesManagement.Services;
 
 namespace OnlineSalesManagement
 {
@@ -27,8 +28,8 @@ namespace OnlineSalesManagement
     {
         public Task SendAsync(IdentityMessage message)
         {
-            // Plug in your SMS service here to send a text message.
-            return Task.FromResult(0);
+            // Fail closed: never claim that the no-op scaffold has delivered an ownership code.
+            throw new InvalidOperationException("Chưa cấu hình nhà cung cấp SMS. Chưa thể xác minh số điện thoại.");
         }
     }
 
@@ -96,6 +97,30 @@ namespace OnlineSalesManagement
         {
         }
 
+        public override async Task<SignInStatus> PasswordSignInAsync(string userName, string password, bool isPersistent, bool shouldLockout)
+        {
+            userName = AccountGovernance.NormalizeEmail(userName);
+            var user = await UserManager.FindByNameAsync(userName);
+            if (user != null && user.IsAdministrativelySuspended)
+            {
+                await UserManager.CheckPasswordAsync(user, password); // Do not introduce a fast suspended-account oracle.
+                return SignInStatus.Failure;
+            }
+            return await base.PasswordSignInAsync(userName, password, isPersistent, shouldLockout);
+        }
+        public new async Task<SignInStatus> ExternalSignInAsync(ExternalLoginInfo loginInfo, bool isPersistent)
+        {
+            var user = await UserManager.FindAsync(loginInfo.Login);
+            if (user != null && user.IsAdministrativelySuspended) return SignInStatus.Failure;
+            return await base.ExternalSignInAsync(loginInfo, isPersistent);
+        }
+        public override async Task<SignInStatus> TwoFactorSignInAsync(string provider, string code, bool isPersistent, bool rememberBrowser)
+        {
+            var id = await GetVerifiedUserIdAsync();
+            var user = id == null ? null : await UserManager.FindByIdAsync(id);
+            if (user == null || user.IsAdministrativelySuspended) return SignInStatus.Failure;
+            return await base.TwoFactorSignInAsync(provider, code, isPersistent, rememberBrowser);
+        }
         public override Task<ClaimsIdentity> CreateUserIdentityAsync(ApplicationUser user)
         {
             return user.GenerateUserIdentityAsync((ApplicationUserManager)UserManager);

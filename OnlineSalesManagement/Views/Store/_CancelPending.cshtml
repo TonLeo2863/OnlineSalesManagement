@@ -1,0 +1,7 @@
+﻿@model OnlineSalesManagement.SalesOrder
+@if (Model.Status == OnlineSalesManagement.OrderStatus.Pending) {
+ using (Html.BeginForm("CancelPending", "Store", FormMethod.Post, new { @class = "d-inline", data_cancel_order = Model.OrderNumber })) {
+  @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" />
+  <button type="submit" class="btn btn-outline-danger btn-sm">Hủy đơn</button>
+ }
+}

@@ -54,6 +54,19 @@ function SqlScalar([string]$query) {
     try { $connection.Open(); $cmd = $connection.CreateCommand(); $cmd.CommandText = $query; $cmd.ExecuteScalar() }
     finally { $connection.Dispose() }
 }
+function UploadWorkbook([Net.CookieContainer]$cookies,[string]$kind,[byte[]]$bytes) {
+    $page=RequestPage ('/CatalogImport/Upload?kind='+$kind) $cookies
+    $token=Token $page.Body;$boundary='ImportBoundary'+[Guid]::NewGuid().ToString('N')
+    $request=[Net.HttpWebRequest]::Create("http://localhost:$Port/CatalogImport/Upload")
+    $request.Method='POST';$request.CookieContainer=$cookies;$request.AllowAutoRedirect=$false;$request.ContentType='multipart/form-data; boundary='+$boundary
+    $body=New-Object IO.MemoryStream
+    $prefix="--$boundary"+"`r`n"+'Content-Disposition: form-data; name="__RequestVerificationToken"'+"`r`n`r`n"+$token+"`r`n--$boundary`r`n"+'Content-Disposition: form-data; name="kind"'+"`r`n`r`n"+$kind+"`r`n--$boundary`r`n"+'Content-Disposition: form-data; name="workbook"; filename="fixture.xlsx"'+"`r`nContent-Type: application/octet-stream`r`n`r`n"
+    $first=[Text.Encoding]::UTF8.GetBytes($prefix);$body.Write($first,0,$first.Length);$body.Write($bytes,0,$bytes.Length)
+    $last=[Text.Encoding]::UTF8.GetBytes("`r`n--$boundary--`r`n");$body.Write($last,0,$last.Length)
+    $request.ContentLength=$body.Length;$stream=$request.GetRequestStream();$body.Position=0;$body.CopyTo($stream);$stream.Dispose();$body.Dispose()
+    try{$response=$request.GetResponse()}catch [Net.WebException]{$response=$_.Exception.Response;if(!$response){throw}}
+    try{$reader=New-Object IO.StreamReader($response.GetResponseStream());[pscustomobject]@{Status=[int]$response.StatusCode;Location=$response.Headers['Location'];Body=$reader.ReadToEnd()}}finally{$response.Dispose()}
+}
 function CartPost([string]$action, [Net.CookieContainer]$cookies, [int]$productId, [int]$quantity) {
     $catalog = RequestPage '/Store' $cookies
     RequestPage ('/Store/' + $action) $cookies (FormData @{ __RequestVerificationToken=(Token $catalog.Body); version=(Field $catalog.Body 'version'); productId=$productId; quantity=$quantity })
@@ -85,6 +98,16 @@ try {
     Check ($guest.Body.Contains('class="customer-body"') -and !$guest.Body.Contains('id="sidebar"')) 'guest uses customer layout without admin sidebar'
     $guestStore = RequestPage '/Store' $guestCookies
     Check ($guestStore.Status -eq 200 -and $guestStore.Body.Contains('product-grid') -and !$guestStore.Body.Contains('id="sidebar"')) 'guest browses customer product grid without admin navigation'
+    $forgot=RequestPage '/Account/ForgotPassword' $guestCookies
+    $knownRecovery=RequestPage '/Account/ForgotPassword' $guestCookies (FormData @{__RequestVerificationToken=(Token $forgot.Body);Email='privacyconfirmed@example.test'})
+    $forgot=RequestPage '/Account/ForgotPassword' $guestCookies
+    $unknownRecovery=RequestPage '/Account/ForgotPassword' $guestCookies (FormData @{__RequestVerificationToken=(Token $forgot.Body);Email='unknownprivacy@example.test'})
+    Check ($knownRecovery.Status -eq 200 -and $unknownRecovery.Status -eq 200 -and $knownRecovery.Body.Contains('không công bố tài khoản') -and $unknownRecovery.Body.Contains('không công bố tài khoản')) 'recovery response does not reveal known or confirmed account status'
+    foreach($email in @('privacyconfirmed@example.test','unknownprivacy@example.test')) {
+        $reset=RequestPage '/Account/ResetPassword?code=invalid-reset-token' $guestCookies
+        $rejected=RequestPage '/Account/ResetPassword' $guestCookies (FormData @{__RequestVerificationToken=(Token $reset.Body);Email=$email;Code='invalid-reset-token';Password='TestOnly!Password9';ConfirmPassword='TestOnly!Password9'})
+        Check ($rejected.Status -eq 200 -and $rejected.Body.Contains('Không thể xử lý thông tin hoặc mã khôi phục')) 'invalid recovery token has generic response for either account'
+    }
     $anonymousProtected = RequestPage '/AdminUsers' $guestCookies
     Check ($anonymousProtected.Status -eq 302 -and $anonymousProtected.Location -match '/Account/Login\?ReturnUrl=') 'anonymous protected URL challenges Login'
     $anonymousLogin = RequestPage $anonymousProtected.Location $guestCookies
@@ -102,7 +125,7 @@ try {
         Check ($dashboardPage.Body.Contains('id="sidebar"') -eq ($role -ne 'KhachHang')) ($role + ' correct layout and sidebar')
         if ($role -ne 'KhachHang') {
             $staffStore = RequestPage '/Store' $cookies
-            Check ($staffStore.Status -eq 200 -and $staffStore.Body.Contains('id="sidebar"') -and $staffStore.Body.Contains('product-grid') -and ([regex]::Matches($staffStore.Body,'src="/Scripts/customer.js"')).Count -eq 1) ($role + ' store retains sidebar and loads customer script once')
+            Check ($staffStore.Status -eq 200 -and $staffStore.Body.Contains('id="sidebar"') -eq ($role -ne 'Admin') -and $staffStore.Body.Contains('product-grid') -and ([regex]::Matches($staffStore.Body,'src="/Scripts/customer.js"')).Count -eq 1) ($role + ' store uses intended layout and loads customer script once')
         }
         [IO.File]::WriteAllText((Join-Path $work ($role + '.html')), $dashboardPage.RawBody, (New-Object Text.UTF8Encoding($false)))
         Check ($dashboardPage.Body.Contains('Quản lý bán hàng') -and !$dashboardPage.Body.Contains('Quáº£n')) ($role + ' Vietnamese render')
@@ -123,9 +146,25 @@ try {
             Check (($allowed -and $page.Status -eq 200) -or (!$allowed -and $page.Status -eq 403 -and !$page.Location)) ($role + ' direct GET ' + $controller)
         }
         if ($role -eq 'Admin') {
+            $preview=RequestPage '/Store' $cookies
+            Check ($preview.Body.Contains('Chế độ xem trước — Quản trị viên') -and $preview.Body.Contains('Quay lại quản trị') -and !$preview.Body.Contains('href="/Store/Cart"') -and !$preview.Body.Contains('href="/Store/Orders"')) 'Admin gets customer preview with no shopping navigation'
+            $previewId=SqlScalar 'SELECT TOP(1) p.Id FROM Products p JOIN Categories c ON c.Id=p.CategoryId WHERE p.IsActive=1 AND c.IsActive=1 ORDER BY p.Id'
+            $previewJson=(RequestPage ('/Store/ProductDetails/'+$previewId) $cookies).Body | ConvertFrom-Json
+            Check ($previewJson.success -and $previewJson.previewOnly -and !$previewJson.signedIn -and !$previewJson.version) 'Admin can read actual product details without cart or purchase capability'
+            $previewAjax=RequestPage '/Store/Cart' $cookies -Ajax
+            Check ($previewAjax.Status -eq 403 -and !($previewAjax.Body | ConvertFrom-Json).success) 'Admin AJAX cart GET is safely denied with JSON'
+            $profileCount=SqlScalar 'SELECT COUNT(*) FROM Customers';$salesCount=SqlScalar 'SELECT COUNT(*) FROM SalesOrders'
+            foreach($action in @('AddToCart','UpdateCart','ClearCart','Checkout','Reorder','CancelPending')) {
+                $blocked=RequestPage ('/Store/'+$action) $cookies (FormData @{__RequestVerificationToken=(Token $preview.Body);productId=1;quantity=1;version='forged';Token='forged';id=1})
+                Check ($blocked.Status -eq 403) ('Admin manual POST denied '+$action)
+            }
+            foreach($action in @('Cart','Checkout','Orders','Details/1')) {Check ((RequestPage ('/Store/'+$action) $cookies).Status -eq 403) ('Admin customer GET denied '+$action)}
+            $blockedAjax=RequestPage '/Store/AddToCart' $cookies (FormData @{__RequestVerificationToken=(Token $preview.Body);productId=1;quantity=1;version='forged'}) -Ajax
+            Check ($blockedAjax.Status -eq 403 -and !($blockedAjax.Body | ConvertFrom-Json).success) 'Admin AJAX purchase gets JSON 403'
+            Check ((SqlScalar 'SELECT COUNT(*) FROM Customers') -eq $profileCount -and (SqlScalar 'SELECT COUNT(*) FROM SalesOrders') -eq $salesCount) 'Admin browsing and forged posts create no profile or order'
             $accounts = RequestPage '/AdminUsers' $cookies
             Check (([regex]::Matches($accounts.Body, 'data-user-card')).Count -ge 6) 'six account cards render including unusual roles'
-            Check ($accounts.Body.Contains('role-grid') -and $accounts.Body.Contains('data-roles=') -and $accounts.Body.Contains('userSearch')) 'account grid confirmation metadata and search render'
+            Check ($accounts.Body.Contains('role-grid') -and $accounts.Body.Contains('data-roles=') -and $accounts.Body.Contains('id="q"')) 'account grid confirmation metadata and search render'
             [IO.File]::WriteAllText((Join-Path $work 'AdminUsers.html'), $accounts.RawBody, (New-Object Text.UTF8Encoding($false)))
             $catalog = RequestPage '/Store' $cookies
             Check ($catalog.Status -eq 200 -and $catalog.Body.Contains('data-mega-menu') -and $catalog.Body.Contains('aria-controls="category-panel-') -and $catalog.Body.Contains('/Scripts/store-menu.js')) 'server renders mega menu and local script'
@@ -138,6 +177,101 @@ try {
             $searched = RequestPage ('/Store?categoryId=' + $categoryId + '&q=OSDEMO-08-01') $cookies
             Check (([regex]::Matches($searched.Body, '<article[^>]*data-product-id=')).Count -eq 1) 'HTTP SKU search respects selected category'
             Check ($searched.Body.Contains('name="categoryId"')) 'search form preserves selected category'
+        }
+        if ($role -eq 'Admin') {
+            $targetId = SqlScalar "SELECT Id FROM AspNetUsers WHERE Email='KhachHang@ui.example.test'"
+            $oldCookies=New-Object Net.CookieContainer
+            $targetLogin=RequestPage '/Account/Login' $oldCookies
+            $signed=RequestPage '/Account/Login' $oldCookies (FormData @{__RequestVerificationToken=(Token $targetLogin.Body);Email='KhachHang@ui.example.test';Password=$env:DACN_UI_TEST_PASSWORD})
+            Check ($signed.Status -eq 302) 'governance target starts authenticated'
+            $page=RequestPage '/AdminUsers' $cookies
+            $noConfirm=RequestPage '/AdminUsers/SetSuspension' $cookies (FormData @{__RequestVerificationToken=(Token $page.Body);id=$targetId;suspended='true';reason='HTTP safety test';confirmed='false'})
+            Check ((SqlScalar "SELECT CAST(IsAdministrativelySuspended AS int) FROM AspNetUsers WHERE Id='$targetId'") -eq 0) 'unconfirmed suspension never persists'
+            $suspended=RequestPage '/AdminUsers/SetSuspension' $cookies (FormData @{__RequestVerificationToken=(Token $page.Body);id=$targetId;suspended='true';reason='HTTP suspension test';confirmed='true'})
+            $noTokenState=RequestPage '/AdminUsers/SetSuspension' $cookies 'id=invalid&suspended=true&confirmed=true&reason=SafetyTest'
+            Check ($noTokenState.Status -ge 400) 'suspension POST requires antiforgery token'
+            Check ($suspended.Status -eq 302 -and (SqlScalar "SELECT CAST(IsAdministrativelySuspended AS int) FROM AspNetUsers WHERE Id='$targetId'") -eq 1) 'confirmed suspension persists'
+            $oldAccess=RequestPage '/Store/Orders' $oldCookies
+            Check ($oldAccess.Status -eq 302 -and $oldAccess.Location -match '/Account/Login') 'old cookie loses access immediately after suspension'
+            $targetLogin=RequestPage '/Account/Login' $oldCookies
+            $blocked=RequestPage '/Account/Login' $oldCookies (FormData @{__RequestVerificationToken=(Token $targetLogin.Body);Email='KhachHang@ui.example.test';Password=$env:DACN_UI_TEST_PASSWORD})
+            Check ($blocked.Status -eq 200 -and !$blocked.Body.Contains('Đình chỉ')) 'suspended login refused without public status disclosure'
+            $page=RequestPage '/AdminUsers' $cookies
+            $restored=RequestPage '/AdminUsers/SetSuspension' $cookies (FormData @{__RequestVerificationToken=(Token $page.Body);id=$targetId;suspended='false';reason='HTTP restore test';confirmed='true'})
+            Check ($restored.Status -eq 302 -and (SqlScalar "SELECT CAST(IsAdministrativelySuspended AS int) FROM AspNetUsers WHERE Id='$targetId'") -eq 0) 'restore clears administrative flag'
+            Check ((SqlScalar "SELECT COUNT(*) FROM AccountAdministrationAudits WHERE TargetUserId='$targetId'") -eq 2) 'HTTP suspend and restore audit events recorded'
+            $targetLogin=RequestPage '/Account/Login' $oldCookies
+            $signed=RequestPage '/Account/Login' $oldCookies (FormData @{__RequestVerificationToken=(Token $targetLogin.Body);Email='KhachHang@ui.example.test';Password=$env:DACN_UI_TEST_PASSWORD})
+            Check ($signed.Status -eq 302) 'restored account can log in again'
+            $phoneForm=RequestPage '/Manage/AddPhoneNumber' $oldCookies
+            $phoneAttempt=RequestPage '/Manage/AddPhoneNumber' $oldCookies (FormData @{__RequestVerificationToken=(Token $phoneForm.Body);Number='0909999999'})
+            Check ($phoneAttempt.Status -eq 200 -and $phoneAttempt.Body.Contains('Chưa cấu hình SMS') -and (SqlScalar "SELECT CAST(PhoneNumberConfirmed AS int) FROM AspNetUsers WHERE Id='$targetId'") -eq 0) 'unconfigured SMS fails closed and cannot mark ownership verified'
+            $verifyForm=RequestPage '/Manage/AddPhoneNumber' $oldCookies
+            $forgedVerify=RequestPage '/Manage/VerifyPhoneNumber' $oldCookies (FormData @{__RequestVerificationToken=(Token $verifyForm.Body);PhoneNumber='+84909999999';Code='123456'})
+            Check ($forgedVerify.Status -eq 200 -and (SqlScalar "SELECT CAST(PhoneNumberConfirmed AS int) FROM AspNetUsers WHERE Id='$targetId'") -eq 0) 'forged phone confirmation without issued challenge is rejected'
+            $adminId=SqlScalar "SELECT Id FROM AspNetUsers WHERE Email='admin@ui.example.test'"
+            $page=RequestPage '/AdminUsers' $cookies
+            $self=RequestPage '/AdminUsers/SetSuspension' $cookies (FormData @{__RequestVerificationToken=(Token $page.Body);id=$adminId;suspended='true';reason='Self suspension test';confirmed='true'})
+            Check ((SqlScalar "SELECT CAST(IsAdministrativelySuspended AS int) FROM AspNetUsers WHERE Id='$adminId'") -eq 0) 'HTTP self suspension cannot remove active Admin'
+
+            $filter=RequestPage '/AdminUsers?role=KhachHang&q=governance-page&page=2' $cookies
+            Check ($filter.Status -eq 200 -and ([regex]::Matches($filter.Body,'data-user-card')).Count -eq 3) 'account server-side filters and pagination render'
+            Check ((RequestPage '/AdminUsers/AccountAudit' $cookies).Status -eq 200) 'Admin audit page renders'
+        }
+        if($role -eq 'Admin') {
+            $bytes=[IO.File]::ReadAllBytes((Join-Path $sourceSite 'bin\CatalogImportFixture.xlsx'))
+            $upload=UploadWorkbook $cookies 'products' $bytes
+            Check ($upload.Status -eq 302 -and $upload.Location -match 'Preview') 'Excel upload redirects to server Preview'
+            $preview=RequestPage $upload.Location $cookies
+            $previewToken=[regex]::Match($upload.Location,'token=([a-f0-9]+)').Groups[1].Value
+            Check ($preview.Status -eq 200 -and $preview.Body.Contains('HTTP-EXCEL-001')) 'Excel Preview displays parsed scalar rows'
+            Check ((SqlScalar "SELECT COUNT(*) FROM Products WHERE Sku='HTTP-EXCEL-001'") -eq 0) 'Excel Preview never writes records'
+            $cancel=RequestPage '/CatalogImport/Cancel' $cookies (FormData @{__RequestVerificationToken=(Token $preview.Body);token=$previewToken})
+            Check ($cancel.Status -eq 302 -and (SqlScalar "SELECT COUNT(*) FROM Products WHERE Sku='HTTP-EXCEL-001'") -eq 0) 'Excel cancel discards preview without writes'
+            $upload=UploadWorkbook $cookies 'products' $bytes;$preview=RequestPage $upload.Location $cookies;$previewToken=[regex]::Match($upload.Location,'token=([a-f0-9]+)').Groups[1].Value
+            $data=FormData @{__RequestVerificationToken=(Token $preview.Body);token=$previewToken}
+            $confirmed=RequestPage '/CatalogImport/Confirm' $cookies $data
+            Check ($confirmed.Status -eq 302 -and (SqlScalar "SELECT COUNT(*) FROM Products WHERE Sku='HTTP-EXCEL-001' AND QuantityInStock=0") -eq 1) 'Excel explicit confirmation creates product with zero stock'
+            $replay=RequestPage '/CatalogImport/Confirm' $cookies $data
+            Check ($replay.Status -eq 404 -and (SqlScalar "SELECT COUNT(*) FROM Products WHERE Sku='HTTP-EXCEL-001'") -eq 1) 'Excel replay cannot import twice'
+            $bytes=[IO.File]::ReadAllBytes((Join-Path $sourceSite 'bin\CategoryImportFixture.xlsx'))
+            $upload=UploadWorkbook $cookies 'categories' $bytes;$preview=RequestPage $upload.Location $cookies;$previewToken=[regex]::Match($upload.Location,'token=([a-f0-9]+)').Groups[1].Value
+            $confirmed=RequestPage '/CatalogImport/Confirm' $cookies (FormData @{__RequestVerificationToken=(Token $preview.Body);token=$previewToken})
+            Check ($confirmed.Status -eq 302 -and (SqlScalar "SELECT COUNT(*) FROM Categories WHERE Name='HTTP Excel category'") -eq 1) 'Excel category confirmation creates new category'
+            $denied=RequestPage '/CatalogImport/Upload' $oldCookies
+            Check ($denied.Status -eq 403) 'Excel upload is Admin only'
+        }
+        if($role -eq 'Admin') {
+            $employees=RequestPage '/Employees?code=SEARCH-E&active=false' $cookies
+            Check ($employees.Status -eq 200 -and $employees.Body.Contains('<td>SEARCH-E</td>')) 'employee GET code and active filters render'
+            $customers=RequestPage '/Customers?code=SEARCH-C&phone=0909999998&active=false' $cookies
+            Check ($customers.Status -eq 200 -and $customers.Body.Contains('<td>SEARCH-C</td>')) 'customer advanced GET filters render'
+            $invalid=RequestPage '/Employees?fromDate=2026-10-30&toDate=2026-10-01' $cookies
+            Check ($invalid.Status -eq 200 -and $invalid.Body.Contains('validation-summary-errors')) 'employee invalid dates do not crash'
+            $invalid=RequestPage '/Customers?phone=not-a-phone' $cookies
+            Check ($invalid.Status -eq 200 -and $invalid.Body.Contains('validation-summary-errors')) 'customer invalid contact search does not crash'
+            $employeeId=SqlScalar "SELECT Id FROM Employees WHERE Code='SEARCH-E'"
+            $edit=RequestPage ('/Employees/Edit/'+$employeeId) $cookies
+            Check ((Field $edit.Body 'HireDate') -match '^\d{4}-\d{2}-\d{2}$') 'employee date input preserves ISO value on edit'
+            Check ($edit.Status -eq 200 -and $edit.Body.Contains('name="positionChoice"') -and $edit.Body.Contains('Chuc vu cu dac biet')) 'employee dropdown retains legacy Other value'
+            $fields=FormData @{__RequestVerificationToken=(Token $edit.Body);Id=$employeeId;Code='SEARCH-E';FullName='Search Employee edited';Email='search.employee@example.test';PhoneNumber='0909999998';Position='Chuc vu cu dac biet';positionChoice='__other__';HireDate='2026-10-29';IsActive='false'}
+            $saved=RequestPage ('/Employees/Edit/'+$employeeId) $cookies $fields
+            Check ($saved.Status -eq 302 -and (SqlScalar "SELECT Position FROM Employees WHERE Id=$employeeId") -eq 'Chuc vu cu dac biet') 'editing employee does not lose legacy position'
+        }
+        if($role -eq 'Admin') {
+            $historyCustomer=SqlScalar "SELECT Id FROM Customers WHERE Code='HISTORY-C'"
+            $historyEmployee=SqlScalar "SELECT Id FROM Employees WHERE Code='HISTORY-E'"
+            $historySupplier=SqlScalar "SELECT Id FROM Suppliers WHERE Code='HISTORY-S'"
+            $page=RequestPage ('/Customers/Details/'+$historyCustomer+'?ordersPage=2') $cookies
+            Check ($page.Status -eq 200 -and $page.Body.Contains('Lịch sử mua hàng') -and $page.Body.Contains('Trang 2 / 2') -and $page.Body.Contains('/SalesOrders/Details/')) 'customer history page and real order links render'
+            $page=RequestPage ('/Employees/Details/'+$historyEmployee+'?ordersPage=2&receiptsPage=2') $cookies
+            Check ($page.Status -eq 200 -and $page.Body.Contains('Đơn hàng đã xử lý') -and $page.Body.Contains('Phiếu nhập do nhân viên lập') -and !$page.Body.Contains('HISTORY-ONLINE')) 'employee separates receipts and assigned sales without claiming all online orders'
+            $page=RequestPage ('/Suppliers/Details/'+$historySupplier+'?receiptsPage=2') $cookies
+            Check ($page.Status -eq 200 -and $page.Body.Contains('Lịch sử cung cấp hàng') -and $page.Body.Contains('/PurchaseReceipts/Details/')) 'supplier history links to purchase receipts'
+            $emptyCustomer=SqlScalar "SELECT Id FROM Customers WHERE Code='SEARCH-C'"
+            $page=RequestPage ('/Customers/Details/'+$emptyCustomer) $cookies
+            Check ($page.Status -eq 200 -and $page.Body.Contains('Chưa có đơn hàng gắn với hồ sơ này')) 'customer empty history is friendly'
+            Check ((RequestPage ('/Customers/Details/'+$historyCustomer) $oldCookies).Status -eq 403) 'customer account cannot read staff customer history pages'
         }
         $noToken = RequestPage '/AdminUsers/SetRole' $cookies 'id=invalid&role=Admin'
         Check (($role -eq 'Admin' -and $noToken.Status -eq 500 -and $noToken.Body -match 'HttpAntiForgeryException|anti-forgery') -or ($role -ne 'Admin' -and $noToken.Status -in @(302,401,403))) ($role + ' unauthorized/tokenless role POST rejected')
@@ -243,6 +377,61 @@ try {
     $cleared = RequestPage '/Store/ClearCart' $registeredCookies (FormData @{ __RequestVerificationToken=(Token $cart.Body); version=(Field $cart.Body 'version') })
     $cart = RequestPage '/Store/Cart' $registeredCookies
     Check ($cleared.Status -eq 302 -and $cart.Body -notmatch 'id="qty-') 'clear whole cart'
+    # Reorder uses the already owned multi-line order; all DB mutations below are isolated test fixture state only.
+    $firstId=$ids[0];$secondId=$ids[1];$thirdId=$ids[2]
+    $oldPrice=[decimal](SqlScalar "SELECT SalePrice FROM Products WHERE Id=$firstId")
+    $oldActive=[int](SqlScalar "SELECT CAST(IsActive AS int) FROM Products WHERE Id=$thirdId")
+    $newPrice=$oldPrice+123;$newPriceSql=$newPrice.ToString([Globalization.CultureInfo]::InvariantCulture)
+    $orderCountBefore=SqlScalar 'SELECT COUNT(*) FROM SalesOrders'
+    try {
+        $null=CartPost 'AddToCart' $registeredCookies $firstId 1
+        $null=SqlScalar "UPDATE Products SET SalePrice=$newPriceSql WHERE Id=$firstId; UPDATE Products SET IsActive=0 WHERE Id=$thirdId"
+        $ownDetails=RequestPage ('/Store/Details/'+$orderId) $registeredCookies
+        Check ($ownDetails.Status -eq 200 -and $ownDetails.Body.Contains('Mua lại')) 'reorder button renders below shopping link'
+        $reorderData=FormData @{__RequestVerificationToken=(Token $ownDetails.Body);id=$orderId;version=(Field $ownDetails.Body 'version')}
+        $reorder=RequestPage '/Store/Reorder' $registeredCookies $reorderData
+        $reorderCart=RequestPage '/Store/Cart' $registeredCookies
+        $orderedFirst=[int](SqlScalar "SELECT Quantity FROM SalesOrderDetails WHERE SalesOrderId=$orderId AND ProductId=$firstId")
+        $orderedSecond=[int](SqlScalar "SELECT Quantity FROM SalesOrderDetails WHERE SalesOrderId=$orderId AND ProductId=$secondId")
+        $firstExpected=[Math]::Min(1000,[Math]::Min(1+$orderedFirst,[int](SqlScalar "SELECT QuantityInStock FROM Products WHERE Id=$firstId")))
+        $firstActual=[int]([regex]::Match($reorderCart.Body,('id="qty-'+$firstId+'"[^>]*value="(\d+)"')).Groups[1].Value)
+        $secondActual=[int]([regex]::Match($reorderCart.Body,('id="qty-'+$secondId+'"[^>]*value="(\d+)"')).Groups[1].Value)
+        Check ($reorder.Status -eq 302 -and $firstActual -eq $firstExpected -and $secondActual -eq $orderedSecond) 'reorder merges owned multi-line order into existing cart'
+        Check (!$reorderCart.Body.Contains('data-cart-product="'+$thirdId+'"') -and $reorderCart.Body.Contains('ngừng bán')) 'reorder skips inactive line with clear warning'
+        $priceLabel=$newPrice.ToString('N0',[Globalization.CultureInfo]::GetCultureInfo('vi-VN'))+' ₫'
+        Check ($reorderCart.Body.Contains($priceLabel)) 'reorder cart uses current price rather than old order price'
+        Check ((SqlScalar 'SELECT COUNT(*) FROM SalesOrders') -eq $orderCountBefore) 'reorder never creates a Pending order'
+        $replay=RequestPage '/Store/Reorder' $registeredCookies $reorderData
+        $sameCart=RequestPage '/Store/Cart' $registeredCookies
+        $afterReplay=[int]([regex]::Match($sameCart.Body,('id="qty-'+$firstId+'"[^>]*value="(\d+)"')).Groups[1].Value)
+        Check ($replay.Status -eq 302 -and $afterReplay -eq $firstExpected) 'reorder repeat with stale version cannot add duplicates'
+        $otherCatalog=RequestPage '/Store' $secondCookies
+        $foreign=RequestPage '/Store/Reorder' $secondCookies (FormData @{__RequestVerificationToken=(Token $otherCatalog.Body);id=$orderId;version=(Field $otherCatalog.Body 'version')})
+        Check ($foreign.Status -eq 404) 'reorder POST rejects another customer order'
+        $noCsrf=RequestPage '/Store/Reorder' $registeredCookies ('id='+$orderId+'&version=invalid')
+        Check ($noCsrf.Status -ge 400) 'reorder POST requires valid CSRF token'
+    } finally {
+        $oldPriceSql=$oldPrice.ToString([Globalization.CultureInfo]::InvariantCulture)
+        $null=SqlScalar "UPDATE Products SET SalePrice=$oldPriceSql WHERE Id=$firstId; UPDATE Products SET IsActive=$oldActive WHERE Id=$thirdId"
+        $cleanup=RequestPage '/Store/Cart' $registeredCookies
+        $null=RequestPage '/Store/ClearCart' $registeredCookies (FormData @{__RequestVerificationToken=(Token $cleanup.Body);version=(Field $cleanup.Body 'version')})
+    }
+
+    $cancelPage=RequestPage ('/Store/Details/'+$orderId) $registeredCookies
+    Check ($cancelPage.Body.Contains('data-cancel-order=') -and $cancelPage.Body.Contains('Giữ đơn hàng') -and $cancelPage.Body.Contains('Xác nhận hủy')) 'pending details renders cancel confirmation modal'
+    $foreignCancel=RequestPage '/Store/CancelPending' $secondCookies (FormData @{__RequestVerificationToken=(Token $otherCatalog.Body);id=$orderId})
+    Check ($foreignCancel.Status -eq 404 -and (SqlScalar "SELECT Status FROM SalesOrders WHERE Id=$orderId") -eq 0) 'another customer cannot cancel order'
+    $missingCancel=RequestPage '/Store/CancelPending' $registeredCookies ('id='+$orderId)
+    Check ($missingCancel.Status -ge 400 -and (SqlScalar "SELECT Status FROM SalesOrders WHERE Id=$orderId") -eq 0) 'cancel missing CSRF cannot write'
+    $stockBeforeCancel=SqlScalar 'SELECT SUM(CAST(QuantityInStock AS bigint)) FROM Products';$ledgerBeforeCancel=SqlScalar 'SELECT COUNT(*) FROM InventoryTransactions'
+    $cancelData=FormData @{__RequestVerificationToken=(Token $cancelPage.Body);id=$orderId}
+    $cancelled=RequestPage '/Store/CancelPending' $registeredCookies $cancelData
+    $afterCancel=RequestPage ('/Store/Details/'+$orderId) $registeredCookies
+    Check ($cancelled.Status -eq 302 -and $afterCancel.Body.Contains('Đã hủy đơn hàng.') -and $afterCancel.Body.Contains('Đã hủy') -and !$afterCancel.Body.Contains('data-cancel-order=')) 'owner cancels pending and sees success/history without another cancel button'
+    Check ((SqlScalar "SELECT COUNT(*) FROM SalesOrderDetails WHERE SalesOrderId=$orderId") -eq 3 -and (SqlScalar "SELECT Status FROM SalesOrders WHERE Id=$orderId") -eq 3 -and (SqlScalar 'SELECT SUM(CAST(QuantityInStock AS bigint)) FROM Products') -eq $stockBeforeCancel -and (SqlScalar 'SELECT COUNT(*) FROM InventoryTransactions') -eq $ledgerBeforeCancel) 'customer cancellation preserves lines stock and ledger'
+    $repeatedCancel=RequestPage '/Store/CancelPending' $registeredCookies $cancelData
+    $repeatMessage=RequestPage ('/Store/Details/'+$orderId) $registeredCookies
+    Check ($repeatedCancel.Status -eq 302 -and $repeatMessage.Body.Contains('không thể hủy lại')) 'customer cancel replay rejected with friendly message'
     $catalog = RequestPage '/Store' $registeredCookies
     Check ($catalog.Status -eq 200 -and $catalog.Body.Contains('product-grid') -and $catalog.Body.Contains('modal-dialog-centered') -and $catalog.Body.Contains('aria-labelledby="productModalTitle"')) 'product grid and accessible centered modal render'
     $cardsOnly = ($catalog.Body -split '<div class="modal fade"')[0]
@@ -284,12 +473,27 @@ try {
     $ajaxToken = Field $ajaxCheckout.Body 'Token'
     $ajaxPlaced = RequestPage '/Store/Checkout' $registeredCookies (FormData @{ __RequestVerificationToken=(Token $ajaxCheckout.Body); Token=$ajaxToken; FullName='AJAX Customer'; PhoneNumber='0901234567'; ShippingAddress='AJAX address' })
     Check ($ajaxPlaced.Status -eq 302 -and (SqlScalar "SELECT COUNT(*) FROM SalesOrders WHERE OrderNumber='$ajaxToken' AND Status=0 AND PaymentStatus=0") -eq 1) 'AJAX-built cart checks out as Pending Unpaid'
+    $confirmedId=SqlScalar "SELECT Id FROM SalesOrders WHERE OrderNumber='$ajaxToken'"
+    $stalePending=RequestPage ('/Store/Details/'+$confirmedId) $registeredCookies
+    $adminAgain=New-Object Net.CookieContainer;$adminLogin=RequestPage '/Account/Login' $adminAgain
+    $null=RequestPage '/Account/Login' $adminAgain (FormData @{__RequestVerificationToken=(Token $adminLogin.Body);Email='Admin@ui.example.test';Password=$env:DACN_UI_TEST_PASSWORD})
+    $adminOrder=RequestPage ('/SalesOrders/Details/'+$confirmedId) $adminAgain
+    $confirmedByAdmin=RequestPage '/SalesOrders/Confirm' $adminAgain (FormData @{__RequestVerificationToken=(Token $adminOrder.Body);id=$confirmedId})
+    Check ($confirmedByAdmin.Status -eq 302 -and (SqlScalar "SELECT Status FROM SalesOrders WHERE Id=$confirmedId") -eq 1) 'admin existing confirmation still succeeds'
+    $staleCancel=RequestPage '/Store/CancelPending' $registeredCookies (FormData @{__RequestVerificationToken=(Token $stalePending.Body);id=$confirmedId})
+    $processedMessage=RequestPage ('/Store/Details/'+$confirmedId) $registeredCookies
+    Check ($staleCancel.Status -eq 302 -and $processedMessage.Body.Contains('Không thể hủy do đơn hàng đã được xử lý.') -and (SqlScalar "SELECT Status FROM SalesOrders WHERE Id=$confirmedId") -eq 1) 'stale pending form cannot cancel admin confirmed order'
     $anonymousAjax = RequestPage '/Store/AddToCart' $guestCookies 'productId=1&quantity=1&version=invalid' -Ajax
     Check ($anonymousAjax.Status -eq 401 -and !$anonymousAjax.Location -and !($anonymousAjax.RawBody | ConvertFrom-Json).success) 'anonymous AJAX returns JSON 401 without Login redirect'
     $latest = RequestPage '/Store' $registeredCookies
     $null = RequestPage '/Account/LogOff' $registeredCookies (FormData @{ __RequestVerificationToken=(Token $latest.Body) })
     $expired = RequestPage '/Store/AddToCart' $registeredCookies $ajaxData -Ajax
     Check ($expired.Status -eq 401 -and !$expired.Location -and !($expired.RawBody | ConvertFrom-Json).success) 'expired AJAX session returns clear JSON error without redirect loop'
+    $switchLogin=RequestPage '/Account/Login' $registeredCookies
+    $null=RequestPage '/Account/Login' $registeredCookies (FormData @{__RequestVerificationToken=(Token $switchLogin.Body);Email='Admin@ui.example.test';Password=$env:DACN_UI_TEST_PASSWORD})
+    $sameBrowser=RequestPage '/Store' $registeredCookies
+    $oldTab=RequestPage '/Store/Checkout' $registeredCookies
+    Check ($sameBrowser.Body.Contains('Chế độ xem trước') -and $oldTab.Status -eq 403) 'same cookie container switched to Admin affects all tabs and blocks stale customer checkout'
     Write-Output ('TOTAL HTTP PASS: ' + $count)
     Write-Output ('Evidence: ' + $work)
     Write-Output ('Retained isolated DB: ' + $builder.InitialCatalog)

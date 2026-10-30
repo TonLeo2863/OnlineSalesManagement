@@ -1,0 +1,11 @@
+﻿@{ ViewBag.Title = "Nhập Excel"; string kind = ViewBag.Kind as string ?? "products"; }
+<header class="page-header"><div><h1 class="page-title">Nhập @(kind == "products" ? "sản phẩm" : "danh mục") từ Excel</h1><p class="page-subtitle">Chỉ tạo mới · Preview trước khi lưu · Không nhập tồn kho</p></div><a class="btn btn-outline-primary" href="@Url.Action("Template",new {kind=kind})">Tải file mẫu .xlsx</a></header>
+<div class="panel p-4">
+<p>Chỉ dùng một worksheet, tối đa 2 MB / 500 dòng. Không nhận macro, công thức, hyperlink hoặc liên kết ngoài. Dán giá trị thuần và giữ nguyên tên cột. Dòng ví dụ trong mẫu cần được sửa/xóa trước khi dùng.</p>
+@using(Html.BeginForm("Upload","CatalogImport",FormMethod.Post,new {enctype="multipart/form-data"})) {
+ @Html.AntiForgeryToken()<input type="hidden" name="kind" value="@kind" />
+ @Html.ValidationSummary(false,"",new {@class="text-danger",role="alert"})
+ <label for="workbook" class="form-label">Workbook .xlsx</label><input id="workbook" type="file" name="workbook" accept=".xlsx" required class="form-control" />
+ <button class="btn btn-primary mt-3" type="submit">Tải lên và xem Preview</button>
+}
+</div>

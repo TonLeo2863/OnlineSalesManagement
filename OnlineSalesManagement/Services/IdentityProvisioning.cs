@@ -1,5 +1,7 @@
-using System;
+﻿using System;
 using System.Data;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
@@ -14,8 +16,15 @@ namespace OnlineSalesManagement.Services
         public static async Task<IdentityResult> RegisterCustomerAsync(ApplicationDbContext db,
             ApplicationUserManager users, ApplicationUser user, string password, UserLoginInfo login = null)
         {
+            try
+            {
             using (var transaction = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
+                user.Email = AccountGovernance.NormalizeEmail(user.Email);
+                user.UserName = AccountGovernance.NormalizeEmail(user.UserName);
+                if (db.Users.Select(u => new { u.Email, u.UserName }).ToList().Any(u =>
+                    AccountGovernance.NormalizeEmail(u.Email) == user.Email || AccountGovernance.NormalizeEmail(u.UserName) == user.UserName))
+                    return IdentityResult.Failed("Không thể hoàn tất đăng ký với thông tin này. Hãy đăng nhập hoặc dùng chức năng khôi phục tài khoản.");
                 var roles = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(db));
                 if (!roles.RoleExists("KhachHang"))
                 {
@@ -34,6 +43,11 @@ namespace OnlineSalesManagement.Services
                 transaction.Commit();
                 return IdentityResult.Success;
             }
+            }
+            catch (DbUpdateException) { return IdentityResult.Failed("Chưa thể hoàn tất đăng ký. Vui lòng kiểm tra hoặc thử lại sau."); }
+            catch (System.Data.Entity.Core.EntityException) { return IdentityResult.Failed("Chưa thể hoàn tất đăng ký. Vui lòng kiểm tra hoặc thử lại sau."); }
+            catch (SqlException) { return IdentityResult.Failed("Chưa thể hoàn tất đăng ký. Vui lòng kiểm tra hoặc thử lại sau."); }
+
         }
 
         // Invoked only by the local operator tool, never by registration or an HTTP endpoint.

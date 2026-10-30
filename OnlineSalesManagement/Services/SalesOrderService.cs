@@ -221,6 +221,26 @@ namespace OnlineSalesManagement.Services
             }
         }
 
+        public void CancelPendingByCustomer(int orderId, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId)) throw new UnauthorizedAccessException();
+            try {
+                using (var db = new ApplicationDbContext())
+                using (var transaction = db.Database.BeginTransaction(IsolationLevel.Serializable)) {
+                    // Same row lock/order as ConfirmOrder: ownership and state cannot race confirmation.
+                    var order = db.SalesOrders.SqlQuery("SELECT * FROM [SalesOrders] WITH (UPDLOCK,HOLDLOCK) WHERE [Id]=@p0", orderId).SingleOrDefault();
+                    if (order == null || !db.Customers.Any(c => c.Id == order.CustomerId && c.UserId == userId))
+                        throw new UnauthorizedAccessException();
+                    if (order.Status != OrderStatus.Pending)
+                        throw new InvalidOperationException(order.Status == OrderStatus.Cancelled ? "Đơn hàng đã hủy, không thể hủy lại." : "Không thể hủy do đơn hàng đã được xử lý.");
+                    if (db.InventoryTransactions.Any(t => t.SalesOrderId == orderId))
+                        throw new InvalidOperationException("Không thể hủy: lịch sử kho của đơn cần được quản trị kiểm tra.");
+                    order.Status = OrderStatus.Cancelled;
+                    db.SaveChanges(); transaction.Commit();
+                }
+            } catch (DbUpdateConcurrencyException ex) { throw ConcurrencyException(ex); }
+        }
+
         public void CancelOrder(int orderId, string createdBy)
         {
             ValidateActor(createdBy);

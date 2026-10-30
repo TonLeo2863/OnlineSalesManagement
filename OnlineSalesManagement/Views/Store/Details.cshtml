@@ -1,5 +1,6 @@
 ﻿@model OnlineSalesManagement.SalesOrder
 @using OnlineSalesManagement.Services
+@Html.Partial("_CancelPendingDialog")
 @{
     ViewBag.Title = "Chi tiết đơn hàng";
     string updateMessage;
@@ -17,4 +18,12 @@
 @foreach (var line in Model.Details) {
     <article class="ordered-product"><img class="cart-thumbnail" src="@StorePresentation.ImageUrl(Url, line.Product.ImageUrl)" alt="" data-product-image data-placeholder="@Url.Content("~/Content/product-placeholder.svg")" /><div><h3 class="h6">@line.Product.Name</h3><p class="product-sku">@line.Product.Sku</p><span class="text-muted small">@line.Quantity × @line.UnitPrice.ToString("N0") ₫</span></div><strong>@((line.Quantity * line.UnitPrice).ToString("N0")) ₫</strong></article>
 }
-</section><aside class="shop-panel order-summary"><h2 class="h5">Thông tin đơn hàng</h2><div class="delivery-info"><h3 class="h6">Địa chỉ giao hàng</h3><p>@Model.ShippingAddress</p><p class="order-note">@Model.Note</p><h3 class="h6">Thanh toán</h3><p>@Html.DisplayFor(m => m.PaymentMethod, "PaymentMethod")<br />@Html.DisplayFor(m => m.PaymentStatus, "PaymentStatus")</p></div><div class="summary-row"><span>Tạm tính</span><span>@Model.SubTotal.ToString("N0") ₫</span></div><div class="summary-row"><span>Giảm giá</span><span>@Model.DiscountAmount.ToString("N0") ₫</span></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@Model.TotalAmount.ToString("N0") ₫</strong></div><a href="@Url.Action("Index")" class="btn btn-outline-primary w-100">Tiếp tục mua sắm</a></aside></div>
+</section><aside class="shop-panel order-summary"><h2 class="h5">Thông tin đơn hàng</h2><div class="delivery-info"><h3 class="h6">Địa chỉ giao hàng</h3><p>@Model.ShippingAddress</p><p class="order-note">@Model.Note</p><h3 class="h6">Thanh toán</h3><p>@Html.DisplayFor(m => m.PaymentMethod, "PaymentMethod")<br />@Html.DisplayFor(m => m.PaymentStatus, "PaymentStatus")</p></div><div class="summary-row"><span>Tạm tính</span><span>@Model.SubTotal.ToString("N0") ₫</span></div><div class="summary-row"><span>Giảm giá</span><span>@Model.DiscountAmount.ToString("N0") ₫</span></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@Model.TotalAmount.ToString("N0") ₫</strong></div><a href="@Url.Action("Index")" class="btn btn-outline-primary w-100">Tiếp tục mua sắm</a>
+@using(Html.BeginForm("Reorder","Store",FormMethod.Post,new {@class="mt-2"})){
+ @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="version" value="@ViewBag.ReorderVersion" />
+ <button type="submit" class="btn btn-outline-primary w-100">Mua lại</button>
+}
+<small class="text-muted d-block mt-2">Thêm món còn mua được vào giỏ; áp dụng giá và tồn hiện tại, không sao chép giảm giá cũ.</small>
+<div class="mt-3">@Html.Partial("_CancelPending", Model)</div>
+</aside></div>
+@section scripts { <script src="@Url.Content("~/Scripts/cancel-order.js")"></script> }

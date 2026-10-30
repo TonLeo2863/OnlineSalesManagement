@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,6 +32,16 @@ namespace OnlineSalesManagement.Services
                 Items[productId] = quantity;
             }
             Changed();
+        }
+        public bool ApplyReorder(string expectedVersion, IDictionary<int, int> quantities)
+        {
+            if (!Matches(expectedVersion)) return false;
+            if (quantities.Any(p => p.Key <= 0 || p.Value < 1 || p.Value > 1000) || Items.Keys.Union(quantities.Keys).Count() > 100)
+                throw new ArgumentException("Giỏ tối đa 100 mặt hàng, 1–1000 đơn vị mỗi mặt hàng.");
+            if (quantities.Count == 0) return true;
+            foreach (var item in quantities) Items[item.Key] = item.Value;
+            Changed(); // One atomic cart version transition; invalidates any older checkout intent.
+            return true;
         }
         public void Clear() { Items.Clear(); Changed(); }
         public void Submitted(string token, int orderId)

@@ -111,7 +111,7 @@
                 quantity.disabled = p.stock <= 0 || !data.signedIn;
                 add.dataset.available = p.stock > 0 && data.signedIn ? 'true' : 'false';
                 add.disabled = add.dataset.available !== 'true' || busy;
-                document.getElementById('detailLogin').hidden = !!data.signedIn;
+                document.getElementById('detailLogin').hidden = !!data.signedIn || !!data.previewOnly;
                 // A delayed modal response must not overwrite a newer POST result.
                 if (cartRevision === cartRevisionAtRequest) syncCart(data);
                 content.hidden = false;

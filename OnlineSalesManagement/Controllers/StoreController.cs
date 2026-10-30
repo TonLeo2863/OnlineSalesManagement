@@ -26,6 +26,20 @@ namespace OnlineSalesManagement.Controllers
     public class StoreController : Controller
     {
         private readonly ApplicationDbContext db = new ApplicationDbContext();
+        private bool CanPurchase { get { return User.IsInRole("KhachHang") && !User.IsInRole("Admin"); } }
+        protected override void OnActionExecuting(ActionExecutingContext context)
+        {
+            var action = context.ActionDescriptor.ActionName;
+            if (action != "Index" && action != "ProductDetails" && !CanPurchase)
+            {
+                Response.StatusCode = 403; Response.TrySkipIisCustomErrors = true;
+                context.Result = Request.IsAjaxRequest()
+                    ? (ActionResult)Json(new { success = false, message = "Chỉ tài khoản khách hàng được mua hàng. Quản trị viên đang ở chế độ xem trước." }, JsonRequestBehavior.AllowGet)
+                    : new HttpStatusCodeResult(403);
+                return;
+            }
+            base.OnActionExecuting(context);
+        }
         [AllowAnonymous]
         public ActionResult Index(string q, int? categoryId = null)
         {
@@ -35,7 +49,8 @@ namespace OnlineSalesManagement.Controllers
             ViewBag.MenuProducts = db.Products.AsNoTracking().Where(p => p.IsActive && p.Category.IsActive)
                 .Select(p => new MenuProduct { CategoryId = p.CategoryId, Name = p.Name, Sku = p.Sku }).ToList();
             if (!string.IsNullOrWhiteSpace(q)) products = products.Where(p => p.Name.Contains(q) || p.Sku.Contains(q));
-            if (User.Identity.IsAuthenticated && !string.IsNullOrWhiteSpace(User.Identity.GetUserId())) ViewBag.CartVersion = CurrentCart().Version;
+            ViewBag.AdminPreview = User.IsInRole("Admin");
+            if (CanPurchase && !string.IsNullOrWhiteSpace(User.Identity.GetUserId())) ViewBag.CartVersion = CurrentCart().Version;
             return View(products.OrderBy(p => p.Name).Take(200).ToList());
         }
         private ShoppingCart CurrentCart()
@@ -84,12 +99,12 @@ namespace OnlineSalesManagement.Controllers
                 Response.TrySkipIisCustomErrors = true;
                 return Json(new { success = false, message = "Sản phẩm không còn kinh doanh hoặc không tồn tại." }, JsonRequestBehavior.AllowGet);
             }
-            var signedIn = User.Identity.IsAuthenticated && !string.IsNullOrWhiteSpace(User.Identity.GetUserId());
+            var signedIn = CanPurchase && !string.IsNullOrWhiteSpace(User.Identity.GetUserId());
             return Json(new { success = true, product = new {
                 id = product.Id, name = product.Name, sku = product.Sku, category = product.Category.Name,
                 unit = product.Unit, description = product.Description, price = product.SalePrice.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) + " ₫",
                 stock = product.QuantityInStock, imageUrl = StorePresentation.ImageUrl(Url, product.ImageUrl)
-            }, signedIn, version = signedIn ? CurrentCart().Version : null }, JsonRequestBehavior.AllowGet);
+            }, signedIn, previewOnly = User.IsInRole("Admin"), version = signedIn ? CurrentCart().Version : null }, JsonRequestBehavior.AllowGet);
         }
         private ActionResult CartResponse(bool success, string message, int status = 200, string productName = null)
         {
@@ -213,6 +228,33 @@ namespace OnlineSalesManagement.Controllers
             catch (DbUpdateException) { ModelState.AddModelError("", "Dữ liệu vừa thay đổi. Vui lòng kiểm tra Đơn của tôi trước khi đặt lại."); }
             return View(model);
         }
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Reorder(int id, string version)
+        {
+            var uid = User.Identity.GetUserId();
+            if (string.IsNullOrWhiteSpace(uid)) return new HttpUnauthorizedResult();
+            var order = db.SalesOrders.AsNoTracking().Include(o => o.Customer).Include(o => o.Details.Select(d => d.Product.Category))
+                .SingleOrDefault(o => o.Id == id && o.Customer.UserId == uid);
+            if (order == null) return HttpNotFound();
+            var result = ReorderCart.Add(CurrentCart(), order, version);
+            if (result.AddedUnits > 0) TempData["CartSuccess"] = "Đã thêm " + result.AddedUnits + " sản phẩm vào giỏ theo giá hiện tại. Chưa tạo đơn mới; hãy kiểm tra giỏ và đặt hàng.";
+            if (result.Notices.Any()) TempData["CartError"] = string.Join(" ", result.Notices);
+            else if (result.AddedUnits == 0) TempData["CartError"] = "Không có sản phẩm còn mua được để thêm vào giỏ.";
+            return RedirectToAction("Cart");
+        }
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult CancelPending(int id)
+        {
+            if (!CanPurchase) return new HttpStatusCodeResult(403);
+            try {
+                new SalesOrderService().CancelPendingByCustomer(id, User.Identity.GetUserId());
+                TempData["OrderSuccess"] = "Đã hủy đơn hàng.";
+            }
+            catch (UnauthorizedAccessException) { return HttpNotFound(); }
+            catch (InvalidOperationException ex) { TempData["OrderError"] = ex.Message; }
+            catch (DbUpdateException) { TempData["OrderError"] = "Đơn hàng vừa thay đổi. Vui lòng tải lại để kiểm tra trạng thái."; }
+            return RedirectToAction("Details", new { id });
+        }
         public ActionResult Orders()
         {
             var uid = User.Identity.GetUserId();
@@ -226,6 +268,7 @@ namespace OnlineSalesManagement.Controllers
             if (string.IsNullOrWhiteSpace(uid)) return new HttpUnauthorizedResult();
             var order = db.SalesOrders.Include(o => o.Details.Select(d => d.Product))
                 .SingleOrDefault(o => o.Id == id && o.Customer.UserId == uid);
+            if (order != null) ViewBag.ReorderVersion = CurrentCart().Version;
             return order == null ? (ActionResult)HttpNotFound() : View(order);
         }
         protected override void Dispose(bool disposing) { if (disposing) db.Dispose(); base.Dispose(disposing); }

@@ -5,13 +5,26 @@
 <div class="alert alert-info">Mỗi lần lưu sẽ thay thế các vai trò cũ bằng một vai trò chính. Không được gỡ quyền Admin của chính mình hoặc Admin cuối cùng.</div>
 @if (TempData["Error"] != null) { <div class="toast show role-feedback role-feedback-error" data-bs-autohide="false" role="alert"><strong>Chưa thể lưu thay đổi</strong><div>@TempData["Error"]</div><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng thông báo"></button></div> }
 @if (TempData["Success"] != null) { <div class="toast show role-feedback role-feedback-success" data-bs-autohide="false" role="status"><strong>Đã lưu thay đổi</strong><div>@TempData["Success"]</div><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng thông báo"></button></div> }
-<div class="panel p-3 mb-3"><label for="userSearch" class="form-label">Tìm tài khoản hoặc vai trò</label><input id="userSearch" type="search" class="form-control" placeholder="Nhập email hoặc vai trò…" /><small id="userSearchCount" class="text-muted" role="status">@Model.Count() tài khoản</small></div>
+@using (Html.BeginForm("Index", "AdminUsers", FormMethod.Get, new { @class = "panel filter-bar" })) {
+ @Html.ValidationSummary(false, "", new { @class = "text-danger", role = "alert" })
+ <div class="row g-2 align-items-end">
+ <div class="col-md-5"><label for="q" class="form-label">Email / tên đăng nhập</label>@Html.TextBox("q", Request.QueryString["q"], new { @class = "form-control", type = "search" })</div>
+ <div class="col-md-3"><label for="role" class="form-label">Vai trò</label>@Html.DropDownList("role", new SelectList(new[] { new {Value="",Text="Tất cả"}, new {Value="Admin",Text="Admin"}, new {Value="Kho",Text="Kho"}, new {Value="BanHang",Text="BanHang"}, new {Value="KhachHang",Text="KhachHang"}, new {Value="None",Text="Chưa có vai trò"}}, "Value", "Text", Request.QueryString["role"]), new { @class = "form-select" })</div>
+ <div class="col-md-4"><label for="status" class="form-label">Trạng thái</label>@Html.DropDownList("status", new SelectList(new[] {new {Value="",Text="Tất cả"},new {Value="active",Text="Đang hoạt động"},new {Value="suspended",Text="Đình chỉ"},new {Value="locked",Text="Khóa tạm"}},"Value","Text",Request.QueryString["status"]),new { @class="form-select" })</div>
+ </div>
+ <details class="mt-3" open="@(!string.IsNullOrWhiteSpace(Request.QueryString["email"]) || !string.IsNullOrWhiteSpace(Request.QueryString["verifiedPhone"]) ? "open" : null)"><summary>Tìm kiếm nâng cao</summary><div class="row g-2 mt-1">
+ <div class="col-md-6"><label for="email" class="form-label">Email</label>@Html.TextBox("email",Request.QueryString["email"],new {@class="form-control"})</div>
+ <div class="col-md-6"><label for="verifiedPhone" class="form-label">SĐT tài khoản đã xác minh</label>@Html.TextBox("verifiedPhone",Request.QueryString["verifiedPhone"],new {@class="form-control",placeholder="+84…"})</div></div></details>
+ <div class="d-flex gap-2 mt-3"><button class="btn btn-primary">Tìm kiếm</button><a class="btn btn-outline-secondary" href="@Url.Action("Index")">Đặt lại</a><a class="btn btn-outline-secondary" href="@Url.Action("AccountAudit")">Nhật ký tài khoản</a></div>
+}
+<p class="text-muted" role="status">@ViewBag.TotalUsers tài khoản · Trang @ViewBag.Page / @ViewBag.PageCount</p>
 <div class="role-grid">
 @foreach (var item in Model) {
  <article class="role-card" data-user-card data-user-search="@item.Email @item.Roles">
  <span class="role-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(item.Email) ? "?" : item.Email.Substring(0, 1).ToUpperInvariant())</span>
  <div class="role-identity"><span class="role-caption">Tài khoản</span><strong>@item.Email</strong><div class="mt-2">
  @foreach (var roleName in (item.Roles ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { <span class="badge bg-primary me-1">@roleName.Trim()</span> }
+ <span class="badge @(item.IsSuspended ? "bg-danger" : item.IsTemporarilyLocked ? "bg-warning text-dark" : "bg-success")">@(item.IsSuspended ? "Đình chỉ" : item.IsTemporarilyLocked ? "Khóa tạm" : "Hoạt động")</span>
  @if (string.IsNullOrWhiteSpace(item.Roles)) { <span class="badge bg-secondary">Chưa có vai trò</span> }
  </div></div>
  @using (Html.BeginForm("SetRole", "AdminUsers", FormMethod.Post, new { @class = "role-form", data_email = item.Email, data_roles = item.Roles })) {
@@ -21,9 +34,19 @@
  @foreach (var role in OnlineSalesManagement.Controllers.AdminUsersController.AllowedRoles) { <option value="@role">@role</option> }
  </select><button class="btn btn-primary text-nowrap" type="submit">Lưu thay đổi</button>
  }
+ @using (Html.BeginForm("SetSuspension", "AdminUsers", FormMethod.Post, new { @class="account-state-form w-100", data_account=item.Email })) {
+ @Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="suspended" value="@(item.IsSuspended ? "false" : "true")" /><input type="hidden" name="confirmed" value="false" />
+ <label for="reason-@item.Id" class="visually-hidden">Lý do</label><textarea id="reason-@item.Id" name="reason" class="form-control mt-2" required minlength="5" maxlength="500" placeholder="Lý do (không nhập mật khẩu/OTP)"></textarea>
+ <button class="btn @(item.IsSuspended ? "btn-outline-success" : "btn-outline-danger") w-100 mt-2" type="submit">@(item.IsSuspended ? "Khôi phục tài khoản" : "Đình chỉ tài khoản")</button>
+ }
  </article>
 }
 </div>
+<nav class="d-flex gap-2 my-3" aria-label="Phân trang tài khoản">
+@{ int currentPage = (int)ViewBag.Page; int totalPages = (int)ViewBag.PageCount; }
+@if (currentPage > 1) { <a class="btn btn-outline-primary" href="@Url.Action("Index", new { page = currentPage - 1, q = Request.QueryString["q"], role = Request.QueryString["role"], status = Request.QueryString["status"], email = Request.QueryString["email"], verifiedPhone = Request.QueryString["verifiedPhone"] })">Trang trước</a> }
+@if (currentPage < totalPages) { <a class="btn btn-outline-primary" href="@Url.Action("Index", new { page = currentPage + 1, q = Request.QueryString["q"], role = Request.QueryString["role"], status = Request.QueryString["status"], email = Request.QueryString["email"], verifiedPhone = Request.QueryString["verifiedPhone"] })">Trang sau</a> }
+</nav>
 <p id="noMatchingUsers" hidden class="text-muted p-3">Không có tài khoản phù hợp.</p>
 @if (!Model.Any()) { <p class="management-panel p-4">Chưa có tài khoản.</p> }
 </section>
@@ -47,15 +70,14 @@
  document.getElementById('confirmRole').addEventListener('click', function () { if (pending) { this.disabled = true; var form = pending; pending = null; form.submit(); } });
 })();
 (function () {
- var search = document.getElementById('userSearch');
- var cards = Array.from(document.querySelectorAll('[data-user-card]'));
- if (!search) return;
- search.addEventListener('input', function () {
-   var term = search.value.trim().toLocaleLowerCase('vi'), count = 0;
-   cards.forEach(function (card) { card.hidden = card.getAttribute('data-user-search').toLocaleLowerCase('vi').indexOf(term) < 0; if (!card.hidden) count++; });
-   document.getElementById('userSearchCount').textContent = count + ' tài khoản';
-   document.getElementById('noMatchingUsers').hidden = count !== 0;
- });
+ var dialog = document.createElement('dialog'); dialog.className = 'border-0 rounded-3 shadow p-4';
+ dialog.setAttribute('aria-label','Xác nhận trạng thái tài khoản');
+ var text=document.createElement('p'), cancel=document.createElement('button'), confirm=document.createElement('button');
+ cancel.type=confirm.type='button';cancel.className='btn btn-outline-secondary me-2';confirm.className='btn btn-danger';cancel.textContent='Hủy';confirm.textContent='Xác nhận';
+ dialog.append(text,cancel,confirm);document.body.append(dialog);var pending=null;
+ document.querySelectorAll('.account-state-form').forEach(function(form){form.addEventListener('submit',function(event){event.preventDefault();pending=form;text.textContent=(form.elements.suspended.value==='true'?'Đình chỉ ':'Khôi phục ')+form.dataset.account+'? Lý do: '+form.elements.reason.value;confirm.disabled=false;dialog.showModal();});});
+ cancel.addEventListener('click',function(){pending=null;dialog.close();});dialog.addEventListener('cancel',function(){pending=null;});
+ confirm.addEventListener('click',function(){if(pending){confirm.disabled=true;var form=pending;pending=null;form.elements.confirmed.value='true';form.submit();}});
 })();
 </script>
 }

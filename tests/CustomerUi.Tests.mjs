@@ -94,6 +94,10 @@ test('anonymous modal permits reading but requires login to buy', async () => {
     const f = fixture(); f.respond(async () => response(product({ signedIn: false, version: null })));
     await f.show(); assert.equal(f.ids.productModalContent.hidden, false); assert.equal(f.ids.detailAdd.disabled, true); assert.equal(f.ids.detailLogin.hidden, false);
 });
+test('Admin preview modal permits reading without offering login or purchase', async () => {
+    const f = fixture(); f.respond(async () => response(product({signedIn:false,previewOnly:true,version:null})));
+    await f.show(); assert.equal(f.ids.productModalContent.hidden,false);assert.equal(f.ids.detailAdd.disabled,true);assert.equal(f.ids.detailQuantity.disabled,true);assert.equal(f.ids.detailLogin.hidden,true);
+});
 test('discontinued modal reports server error and cannot submit', async () => {
     const f = fixture(); f.respond(async () => response({ success: false, message: 'Sản phẩm không còn kinh doanh.' }, 404));
     await f.show(); assert.equal(f.ids.productModalContent.hidden, true); assert.equal(f.ids.detailAdd.disabled, true); assert.match(f.ids.productModalStatus.textContent, /không còn kinh doanh/);

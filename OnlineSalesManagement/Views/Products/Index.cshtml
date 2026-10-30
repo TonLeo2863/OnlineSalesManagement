@@ -27,9 +27,7 @@
         <h1 class="page-title">Sản phẩm</h1>
         <p class="page-subtitle">Quản lý hàng hóa, giá bán và tồn kho.</p>
     </div>
-    <a href="@Url.Action("Create")" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Thêm sản phẩm
-    </a>
+    @Html.Partial("_CatalogCreateMenu", "products")
 </div>
 
 @* ===== Tìm kiếm và lọc (GET, giữ nguyên action Index) ===== *@

@@ -1,0 +1,14 @@
+﻿@model OnlineSalesManagement.ViewModels.TransactionHistoryViewModel
+<section class="panel p-3 my-4">
+<h2 class="h4">@Model.Title</h2>
+<p class="text-muted">Tổng: <strong>@Model.TotalCount</strong> @(Model.Kind=="sales"?"đơn hàng":"phiếu nhập") · Giá trị @(Model.Kind=="sales"?"đã xác nhận/hoàn tất":"phiếu đã nhập kho"): <strong>@Model.ConfirmedAmount.ToString("N0") đ</strong></p>
+@if(!Model.Rows.Any()){<div class="empty-state">@(Model.Kind=="sales"?"Chưa có đơn hàng gắn với hồ sơ này.":"Chưa có phiếu nhập gắn với hồ sơ này.")</div>}
+else{
+<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>@(Model.Kind=="sales"?"Mã đơn":"Số phiếu")</th><th>Ngày</th><th>Trạng thái</th>@if(Model.Kind=="sales"){<th>Kênh bán</th>}<th>@Model.PartnerTitle</th><th class="text-end">Tổng tiền</th></tr></thead><tbody>
+@foreach(var row in Model.Rows){<tr><td><a href="@Url.Action("Details",Model.Kind=="sales"?"SalesOrders":"PurchaseReceipts",new {id=row.Id})">@row.Number</a></td><td>@row.Date.ToString("dd/MM/yyyy HH:mm")</td><td><span class="badge bg-secondary">@OnlineSalesManagement.Services.TransactionHistory.Status(Model.Kind,row.Status)</span></td>@if(Model.Kind=="sales"){<td>@(row.Channel==0?"Tại quầy":row.Channel==1?"Trực tuyến":"Không xác định")</td>}<td>@(string.IsNullOrWhiteSpace(row.Partner)?"—":row.Partner)</td><td class="text-end">@row.Amount.ToString("N0") đ</td></tr>}
+</tbody></table></div>
+}
+<nav class="d-flex gap-2 align-items-center" aria-label="Phân trang @Model.Title"><span class="text-muted">Trang @Model.Page / @Model.PageCount</span>
+@foreach(var target in new[]{Model.Page-1,Model.Page+1}){if(target<1 || target>Model.PageCount){continue;}var route=new System.Web.Routing.RouteValueDictionary();foreach(string key in Request.QueryString.AllKeys){if(key!=null && key!="id" && key!=Model.PageParameter){route[key]=Request.QueryString[key];}}route["id"]=Model.OwnerId;route[Model.PageParameter]=target;<a class="btn btn-sm btn-outline-primary" href="@Url.Action("Details",route)">@(target<Model.Page?"Trước":"Sau")</a>}
+</nav><small class="text-muted">Danh sách gồm mọi trạng thái; tổng giá trị loại chứng từ nháp/chờ/hủy. Nhân viên chỉ được ghi nhận theo FK thực tế, đơn online chưa phân công không thuộc lịch sử xử lý của nhân viên.</small>
+</section>

@@ -61,6 +61,7 @@
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
@@ -171,6 +172,7 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Services\NavigationAccess.cs" />
     <Compile Include="Services\ShoppingCart.cs" />
+    <Compile Include="Services\ReorderCart.cs" />
     <Compile Include="Services\StorePresentation.cs" />
     <Compile Include="Services\DemoCatalog.cs" />
     <Compile Include="Services\IdentityProvisioning.cs" />
@@ -179,6 +181,10 @@
     <Compile Include="Controllers\StoreController.cs" />
     <Compile Include="Controllers\AdminUsersController.cs" />
     <Compile Include="Controllers\CategoriesController.cs" />
+    <Compile Include="Controllers\CatalogImportController.cs" />
+    <Compile Include="Services\CatalogWorkbook.cs" />
+    <Compile Include="Services\CatalogImportService.cs" />
+    <Compile Include="ViewModels\CatalogImportViewModels.cs" />
     <Compile Include="Controllers\CustomersController.cs" />
     <Compile Include="Controllers\EmployeesController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -200,6 +206,8 @@
     <Compile Include="Migrations\202610151148216_AddShiftManagementTables.Designer.cs">
       <DependentUpon>202610151148216_AddShiftManagementTables.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202610292211500_AccountGovernance.cs" />
+    <Compile Include="Migrations\202610292211500_AccountGovernance.Designer.cs"><DependentUpon>202610292211500_AccountGovernance.cs</DependentUpon></Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\Category.cs" />
@@ -207,6 +215,11 @@
     <Compile Include="Models\Employee.cs" />
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\AccountAdministrationAudit.cs" />
+    <Compile Include="Services\AccountGovernance.cs" />
+    <Compile Include="Services\PeopleDirectory.cs" />
+    <Compile Include="Services\TransactionHistory.cs" />
+    <Compile Include="ViewModels\TransactionHistoryViewModel.cs" />
     <Compile Include="Models\InventoryShiftAuditLog.cs" />
     <Compile Include="Models\InventoryShiftOpeningStock.cs" />
     <Compile Include="Models\InventoryShiftSnapshot.cs" />
@@ -280,6 +293,9 @@
     </Content>
     <Content Include="Views\Web.config" />
     <Content Include="Views\Store\Index.cshtml" />
+    <Content Include="Views\Store\_CancelPending.cshtml" />
+    <Content Include="Views\Store\_CancelPendingDialog.cshtml" />
+    <Content Include="Scripts\cancel-order.js" />
     <Content Include="Views\Store\Checkout.cshtml" />
     <Content Include="Views\Store\Cart.cshtml" />
     <Content Include="Views\Store\_CartBadge.cshtml" />
@@ -297,8 +313,13 @@
     <Content Include="Views\Store\Orders.cshtml" />
     <Content Include="Views\Store\Details.cshtml" />
     <Content Include="Views\AdminUsers\Index.cshtml" />
+    <Content Include="Views\AdminUsers\AccountAudit.cshtml" />
     <Content Include="Views\AdminUsers\Activity.cshtml" />
     <Content Include="Views\Categories\Index.cshtml" />
+    <Content Include="Views\CatalogImport\Upload.cshtml" />
+    <Content Include="Views\CatalogImport\Preview.cshtml" />
+    <Content Include="Views\CatalogImport\Result.cshtml" />
+
     <Content Include="Views\Categories\Edit.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
@@ -332,6 +353,10 @@
     <Content Include="Views\Products\Edit.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Shared\_DocumentFilters.cshtml" />
+    <Content Include="Views\Shared\_CatalogCreateMenu.cshtml" />
+    <Content Include="Views\Shared\_PeopleFilters.cshtml" />
+    <Content Include="Views\Shared\_TransactionHistory.cshtml" />
+    <Content Include="Views\Shared\_EmployeePosition.cshtml" />
     <Content Include="Views\Products\Index.cshtml" />
     <Content Include="Views\Suppliers\Create.cshtml" />
     <Content Include="Views\Suppliers\Delete.cshtml" />
@@ -391,6 +416,7 @@
     <Content Include="Scripts\jquery-3.7.0.min.map" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Migrations\202610292211500_AccountGovernance.resx"><DependentUpon>202610292211500_AccountGovernance.cs</DependentUpon></EmbeddedResource>
     <EmbeddedResource Include="Migrations\202610131032209_InitialCreate.resx">
       <DependentUpon>202610131032209_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>

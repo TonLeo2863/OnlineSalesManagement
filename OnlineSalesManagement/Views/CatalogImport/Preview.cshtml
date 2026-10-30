@@ -1,0 +1,14 @@
+﻿@model OnlineSalesManagement.ViewModels.CatalogImportSnapshot
+@{ViewBag.Title="Preview nhập Excel";var headers=OnlineSalesManagement.Services.CatalogWorkbook.Headers(Model.Kind);}
+<h1 class="page-title">Preview nhập @(Model.Kind=="products"?"sản phẩm":"danh mục")</h1>
+<p class="text-muted">@Model.Rows.Count dòng · @Model.ValidCount hợp lệ · @(Model.Rows.Count-Model.ValidCount) lỗi · @Model.DuplicateCount trùng. Hết hạn: @Model.ExpiresUtc.ToLocalTime().ToString("HH:mm").</p>
+@Html.ValidationSummary(false,"",new {@class="text-danger",role="alert"})
+@if(Model.Issues.Any()) { <div class="alert alert-warning"><strong>Chưa thể nhập. Sửa file và tải lại.</strong><ul>@foreach(var issue in Model.Issues){<li>Dòng @issue.Row · @issue.Column: @issue.Message</li>}</ul></div> }
+<div class="panel table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>Dòng</th>@foreach(var title in headers){<th>@title</th>}<th>Kết quả</th></tr></thead><tbody>
+@foreach(var row in Model.Rows){<tr><td>@row.Number</td>@foreach(var cell in row.Cells){<td>@cell</td>}<td>@(Model.Issues.Any(i=>i.Row==row.Number)?"Có lỗi":"Hợp lệ")</td></tr>}
+</tbody></table></div>
+<div class="d-flex gap-2 my-3">
+@using(Html.BeginForm("Confirm","CatalogImport",FormMethod.Post)){@Html.AntiForgeryToken()<input type="hidden" name="token" value="@Model.Token" /><button class="btn btn-primary" type="submit" disabled="@(Model.Issues.Any()?"disabled":null)">Xác nhận nhập @Model.ValidCount bản ghi</button>}
+@using(Html.BeginForm("Cancel","CatalogImport",FormMethod.Post)){@Html.AntiForgeryToken()<input type="hidden" name="token" value="@Model.Token" /><button class="btn btn-outline-secondary" type="submit">Hủy Preview</button>}
+<a class="btn btn-outline-secondary" href="@Url.Action("Upload",new {kind=Model.Kind})">Tải file đã sửa</a>
+</div><p>Sản phẩm mới có tồn bằng 0. Server sẽ kiểm tra lại toàn bộ dữ liệu trong transaction; không ghi đè SKU đã có.</p>

@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using OnlineSalesManagement.Services;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
@@ -24,7 +25,7 @@ namespace OnlineSalesManagement.Controllers
         }
 
         // GET: Suppliers/Details/5
-        public ActionResult Details(int? id)
+        public ActionResult Details(int? id, int receiptsPage = 1)
         {
             if (id == null)
             {
@@ -35,6 +36,7 @@ namespace OnlineSalesManagement.Controllers
             {
                 return HttpNotFound();
             }
+            ViewBag.ReceiptHistory = TransactionHistory.Receipts(db.PurchaseReceipts.Where(o => o.SupplierId == supplier.Id), supplier.Id, receiptsPage, "Lịch sử cung cấp hàng", false);
             return View(supplier);
         }
 

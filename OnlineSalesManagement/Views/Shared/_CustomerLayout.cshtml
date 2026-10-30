@@ -1,6 +1,7 @@
-@using Microsoft.AspNet.Identity
+﻿@using Microsoft.AspNet.Identity
 @{
-    var cartOwner = User.Identity.GetUserId();
+    bool preview = User.IsInRole("Admin");
+    var cartOwner = preview ? null : User.Identity.GetUserId();
     var headerCart = string.IsNullOrWhiteSpace(cartOwner) ? null : Session["ShoppingCart:" + cartOwner] as OnlineSalesManagement.Services.ShoppingCart;
     var headerCount = headerCart != null && headerCart.OwnerId == cartOwner ? headerCart.Items.Values.Sum() : 0;
 }
@@ -24,12 +25,14 @@
             <div class="navbar-nav shop-links me-auto">
                 <a class="nav-link" href="@Url.Action("Index", "Home")">Trang chủ</a>
                 <a class="nav-link" href="@Url.Action("Index", "Store")">Cửa hàng</a>
-                <a class="nav-link" href="@Url.Action("Orders", "Store")">Đơn hàng của tôi</a>
+                @if (!preview) { <a class="nav-link" href="@Url.Action("Orders", "Store")">Đơn hàng của tôi</a> }
             </div>
+            @if (!preview) {
             <a class="shop-cart-link" href="@Url.Action("Cart", "Store")" aria-label="Giỏ hàng">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 3h3l2 12h12l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
                 <span>Giỏ hàng</span>@Html.Partial("~/Views/Store/_CartBadge.cshtml", headerCount)
             </a>
+            }
             @if (Request.IsAuthenticated) {
                 <div class="shop-account"><a href="@Url.Action("Index", "Manage")" title="@User.Identity.GetUserName()">Tài khoản</a>
                 @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { @class = "d-inline" })) {
@@ -41,6 +44,7 @@
         </div>
     </nav>
 </header>
+@if (preview) { <div class="container alert alert-info mt-3" role="status"><strong>Chế độ xem trước — Quản trị viên</strong><a class="btn btn-outline-primary ms-3" href="@Url.Action("Index", "Home")">Quay lại quản trị</a></div> }
 <main id="main-content" class="container customer-content">@RenderBody()</main>
 <footer class="shop-footer"><div class="container d-flex flex-wrap justify-content-between gap-3"><div><strong>OSshop</strong><p>Mua sắm thuận tiện, theo dõi đơn dễ dàng.</p></div><small>© @DateTime.Now.Year OnlineSalesManagement</small></div></footer>
 @Html.Partial("_ShopToast")

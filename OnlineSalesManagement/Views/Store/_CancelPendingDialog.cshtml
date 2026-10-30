@@ -1,0 +1,9 @@
+﻿@if (TempData["OrderSuccess"] != null) { <div class="alert alert-success" role="status">@TempData["OrderSuccess"]</div> }
+@if (TempData["OrderError"] != null) { <div class="alert alert-warning" role="alert">@TempData["OrderError"]</div> }
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderTitle" aria-hidden="true">
+ <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title fs-5" id="cancelOrderTitle">Hủy đơn hàng</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+  <div class="modal-body"><strong id="cancelOrderCode"></strong><p>Bạn có chắc muốn hủy đơn hàng này?</p></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Giữ đơn hàng</button><button type="button" class="btn btn-danger" id="confirmCancelOrder">Xác nhận hủy</button></div>
+ </div></div>
+</div>

@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using OnlineSalesManagement.Services;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
@@ -18,14 +19,30 @@ namespace OnlineSalesManagement.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Customers
-        public ActionResult Index()
+        public ActionResult Index(string code = null, string fullName = null, string email = null, string phone = null, bool? active = null,
+            DateTime? fromDate = null, DateTime? toDate = null, int page = 1)
         {
-            var customers = db.Customers.Include(c => c.User);
-            return View(customers.ToList());
+            PeopleDirectory.CheckDates(ModelState, fromDate, toDate);
+            var contact = PeopleDirectory.ContactSearch(phone, ModelState);
+            if ((code ?? "").Length > 20 || (fullName ?? "").Length > 150 || (email ?? "").Length > 256) ModelState.AddModelError("", "Điều kiện tìm kiếm quá dài.");
+
+            if (!ModelState.IsValid) { ViewBag.Total = 0; ViewBag.Page = 1; ViewBag.PageCount = 1; return View(new System.Collections.Generic.List<Customer>()); }
+            var query = db.Customers.AsNoTracking().Include(x => x.User).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(code)) { code = code.Trim(); query = query.Where(x => x.Code.Contains(code)); }
+            if (!string.IsNullOrWhiteSpace(fullName)) { fullName = fullName.Trim(); query = query.Where(x => x.FullName.Contains(fullName)); }
+            if (!string.IsNullOrWhiteSpace(email)) { email = email.Trim(); query = query.Where(x => x.Email.Contains(email)); }
+            if (contact != null) query = query.Where(x => x.PhoneNumber != null && x.PhoneNumber.Replace("+84", "0").Replace(" ", "").Replace("-", "").Replace(".", "").Replace("(", "").Replace(")", "").Contains(contact));
+            if (active.HasValue) query = query.Where(x => x.IsActive == active.Value);
+            if (fromDate.HasValue) { var start = fromDate.Value.Date; query = query.Where(x => x.CreatedDate >= start); }
+            if (toDate.HasValue) { var end = toDate.Value.Date.AddDays(1); query = query.Where(x => x.CreatedDate < end); }
+
+            var total = query.Count(); var pages = Math.Max(1, (total + 19) / 20); page = Math.Min(Math.Max(1, page), pages);
+            ViewBag.Total = total; ViewBag.Page = page; ViewBag.PageCount = pages;
+            return View(query.OrderBy(x => x.Code).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToList());
         }
 
         // GET: Customers/Details/5
-        public ActionResult Details(int? id)
+        public ActionResult Details(int? id, int ordersPage = 1)
         {
             if (id == null)
             {
@@ -36,6 +53,7 @@ namespace OnlineSalesManagement.Controllers
             {
                 return HttpNotFound();
             }
+            ViewBag.OrderHistory = TransactionHistory.Sales(db.SalesOrders.Where(o => o.CustomerId == customer.Id), customer.Id, ordersPage, "Lịch sử mua hàng", false);
             return View(customer);
         }
 

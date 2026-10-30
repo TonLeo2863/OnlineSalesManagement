@@ -2,6 +2,7 @@
 @using OnlineSalesManagement.Services
 @{ ViewBag.Title = "Giỏ hàng"; }
 <div class="section-heading"><div><span class="shop-eyebrow">Mua sắm cùng OSshop</span><h1>Giỏ hàng của bạn</h1><p>@Model.Lines.Sum(l => l.Quantity) sản phẩm · @Model.Lines.Count mặt hàng</p></div><a href="@Url.Action("Index")">← Tiếp tục mua sắm</a></div>
+@if (TempData["CartSuccess"] != null) { <div class="alert alert-success" role="status">@TempData["CartSuccess"]</div> }
 @if (TempData["CartError"] != null) { <div class="alert alert-warning" role="alert">@TempData["CartError"]</div> }
 @if (Model.Lines.Count == 0) {
     <section class="empty-state"><img src="@Url.Content("~/Content/product-placeholder.svg")" alt="" class="empty-cart-image" /><h2 class="h4">Giỏ hàng đang trống</h2><p>Một sản phẩm bạn yêu thích đang chờ được khám phá.</p><a href="@Url.Action("Index")" class="btn btn-primary">Bắt đầu mua sắm</a></section>

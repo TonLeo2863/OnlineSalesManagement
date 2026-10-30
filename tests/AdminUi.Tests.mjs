@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-const script = name => readFileSync(new URL('../OnlineSalesManagement/Views/' + name + '/Index.cshtml', import.meta.url), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+const script = name => readFileSync(new URL('../OnlineSalesManagement/Views/' + name + '/Index.cshtml', import.meta.url), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1].split('})();')[0] + '})();';
 const element = () => ({ listeners: {}, value: '', hidden: false, textContent: '', addEventListener(event, fn) { this.listeners[event] = fn; } });
 let assertions = 0;
 function check(value, message) { assert.ok(value, message); console.log('PASS: ' + message); assertions++; }
@@ -22,7 +22,8 @@ function check(value, message) { assert.ok(value, message); console.log('PASS: '
  start(); ids.confirmRole.listeners.click.call(ids.confirmRole);
  check(submits === 1 && ids.confirmRole.disabled, 'confirm submits selected form and disables repeat click');
 }
-for (const page of ['Employees', 'Customers', 'Suppliers']) {
+// Employees/Customers now use GET/server filters, covered by SQL/HTTP tests.
+for (const page of ['Suppliers']) {
  const ids = Object.fromEntries(['quickSearch', 'activeFilter', 'resultCount', 'emptyResults'].map(id => [id, element()]));
  const rows = [ { textContent: 'NV01 Nguyễn Đăng', dataset: { active: 'true' } }, { textContent: 'NV02 Trần An', dataset: { active: 'false' } } ];
  vm.runInNewContext(script(page), { document: { getElementById: id => ids[id], querySelectorAll: () => rows } });

@@ -3,7 +3,8 @@
 <section class="management-page">
 <header class="management-heading"><div><span class="management-eyebrow">ĐỐI TÁC &amp; NHÂN SỰ</span><h2>Nhân viên</h2><p>Quản lý thông tin và trạng thái hoạt động.</p></div>@Html.ActionLink("Thêm mới", "Create", null, new { @class = "btn btn-primary" })</header>
 <div class="management-panel">
-<div class="management-toolbar"><div><label for="quickSearch" class="form-label">Tìm nhanh</label><input id="quickSearch" type="search" class="form-control" placeholder="Nhập mã, tên, email, điện thoại…" /></div><div><label for="activeFilter" class="form-label">Trạng thái</label><select id="activeFilter" class="form-select"><option value="">Tất cả</option><option value="true">Đang hoạt động</option><option value="false">Ngừng hoạt động</option></select></div><span id="resultCount" class="text-muted" role="status"></span></div>
+@Html.Partial("_PeopleFilters")
+<p class="text-muted px-3" role="status">@ViewBag.Total bản ghi · Trang @ViewBag.Page / @ViewBag.PageCount</p>
 <div class="table-responsive"><table class="table table-hover management-table"><thead><tr><th>Mã</th><th>Họ tên</th><th>Tài khoản</th><th>Email</th><th>Điện thoại</th><th>Địa chỉ</th><th>Chức vụ</th><th>Ngày vào làm</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody>
 @foreach (var item in Model) {
 <tr data-active="@(item.IsActive ? "true" : "false")">
@@ -18,18 +19,8 @@
 <td><span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">@(item.IsActive ? "Hoạt động" : "Ngừng hoạt động")</span></td>
 <td class="text-end text-nowrap">@Html.ActionLink("Chi tiết", "Details", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-primary" }) @Html.ActionLink("Sửa", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-secondary" }) @Html.ActionLink("Xóa", "Delete", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-danger" })</td></tr>
 }
-</tbody></table><p id="emptyResults" class="text-center text-muted p-4" hidden>Không có dữ liệu phù hợp.</p></div></div></section>
-@section scripts {
-<script>
-(function () {
- var search = document.getElementById('quickSearch'), status = document.getElementById('activeFilter');
- var rows = document.querySelectorAll('tr[data-active]');
- function normalize(value) { return value.toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'); }
- function filter() { var count = 0, term = normalize(search.value.trim());
- rows.forEach(function (row) { var show = normalize(row.textContent).indexOf(term) >= 0 && (!status.value || row.dataset.active === status.value); row.hidden = !show; if (show) count++; });
- document.getElementById('resultCount').textContent = count + ' bản ghi'; document.getElementById('emptyResults').hidden = count > 0;
- }
- search.addEventListener('input', filter); status.addEventListener('change', filter); filter();
-})();
-</script>
-}
+</tbody></table>@if (!Model.Any()) { <p class="text-center text-muted p-4">Không có dữ liệu phù hợp.</p> }</div></div></section>
+<nav class="d-flex gap-2" aria-label="Phân trang">
+@{ int current = (int)ViewBag.Page; int pages = (int)ViewBag.PageCount; }
+@foreach(var target in new[] {current-1,current+1}) { if(target<1 || target>pages){continue;} var route = new System.Web.Routing.RouteValueDictionary(); foreach(string key in Request.QueryString.AllKeys){if(key!=null && key!="page"){route[key]=Request.QueryString[key];}}route["page"]=target;<a class="btn btn-outline-primary" href="@Url.Action("Index",route)">@(target<current?"Trang trước":"Trang sau")</a> }
+</nav>
